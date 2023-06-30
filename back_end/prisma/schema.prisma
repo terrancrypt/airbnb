@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model reservations {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  room_id      Int
+  start_date   DateTime  @db.DateTime(0)
+  end_date     DateTime  @db.DateTime(0)
+  total_guests Int
+  price        Int
+  users        users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reservations_ibfk_1")
+  rooms        rooms     @relation(fields: [room_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reservations_ibfk_2")
+  reviews      reviews[]
+
+  @@index([user_id], map: "user_id")
+  @@index([room_id], map: "room_id")
+}
+
+model reviews {
+  id             Int          @id @default(autoincrement())
+  reservation_id Int
+  room_id        Int
+  rating         Int
+  comment        String       @db.VarChar(500)
+  reservations   reservations @relation(fields: [reservation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reviews_ibfk_1")
+  rooms          rooms        @relation(fields: [room_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reviews_ibfk_2")
+
+  @@index([reservation_id], map: "reservation_id")
+  @@index([room_id], map: "room_id")
+}
+
+model users {
+  id                 Int            @id @default(autoincrement())
+  full_name          String         @db.VarChar(255)
+  email              String         @unique(map: "email") @db.VarChar(255)
+  pass_word          String         @db.VarChar(255)
+  phone_number       String?        @db.VarChar(50)
+  birth_day          DateTime?      @db.Date
+  gender             String?        @db.VarChar(50)
+  profile_img        String?        @db.VarChar(500)
+  role               String?        @db.VarChar(50)
+  hash_refresh_token String?        @db.VarChar(255)
+  reservations       reservations[]
+  rooms              rooms[]
+}
+
+model room_address {
+  id      Int     @id @default(autoincrement())
+  street  String  @db.VarChar(255)
+  state   String  @db.VarChar(255)
+  city    String  @db.VarChar(255)
+  country String  @db.VarChar(255)
+  rooms   rooms[]
+}
+
+model room_images {
+  id      Int    @id @default(autoincrement())
+  room_id Int
+  url_img String @db.VarChar(500)
+  rooms   rooms  @relation(fields: [room_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "room_images_ibfk_1")
+
+  @@index([room_id], map: "room_id")
+}
+
+model room_types {
+  id        Int     @id @default(autoincrement())
+  type_name String? @db.VarChar(50)
+  rooms     rooms[]
+}
+
+model rooms {
+  id              Int            @id @default(autoincrement())
+  title           String         @db.VarChar(255)
+  max_guests      Int
+  total_bedrooms  Int
+  total_beds      Int
+  total_bathrooms Int
+  description     String         @db.VarChar(225)
+  price           Int
+  has_tv          Boolean
+  has_kitchen     Boolean
+  has_air_con     Boolean
+  has_wifi        Boolean
+  has_washer      Boolean
+  has_iron        Boolean
+  has_pool        Boolean
+  has_parking     Boolean
+  pets_allowed    Boolean
+  create_at       DateTime       @db.DateTime(0)
+  update_at       DateTime       @db.DateTime(0)
+  latitude        Float?         @db.Float
+  longtitude      Float?         @db.Float
+  primary_img     String         @db.VarChar(500)
+  room_address_id Int
+  room_type       Int
+  owner_id        Int
+  reservations    reservations[]
+  reviews         reviews[]
+  room_images     room_images[]
+  room_address    room_address   @relation(fields: [room_address_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rooms_ibfk_1")
+  room_types      room_types     @relation(fields: [room_type], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rooms_ibfk_2")
+  users           users          @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rooms_ibfk_3")
+
+  @@index([owner_id], map: "owner_id")
+  @@index([room_address_id], map: "room_address_id")
+  @@index([room_type], map: "room_type")
+}

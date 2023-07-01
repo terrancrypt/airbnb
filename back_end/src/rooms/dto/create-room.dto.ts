@@ -107,12 +107,6 @@ export class CreateRoomDto {
     longtitude: string;
 
     @ApiProperty({
-        example: "https://images.pexels.com/photos/1001965/pexels-photo-1001965.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-    })
-    @IsNotEmpty()
-    primary_img: string;
-
-    @ApiProperty({
         example: "123 Ngo Quyen"
     })
     @IsNotEmpty()

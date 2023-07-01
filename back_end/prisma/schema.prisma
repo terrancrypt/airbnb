@@ -97,7 +97,7 @@ model rooms {
   update_at       DateTime       @db.DateTime(0)
   latitude        Float?         @db.Float
   longtitude      Float?         @db.Float
-  primary_img     String         @db.VarChar(500)
+  primary_img     String?        @db.VarChar(500)
   room_address_id Int
   room_type       Int
   owner_id        Int

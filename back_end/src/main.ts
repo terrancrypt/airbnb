@@ -2,16 +2,18 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as serviceAccount from '../firebase-admin.json';
+import * as express from "express"
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors()
-
+  app.enableCors();
   app.setGlobalPrefix('api');
-
   app.useGlobalPipes(new ValidationPipe());
+  app.use(express.static("."))
 
+  // Swagger
   const config = new DocumentBuilder()
     .setTitle('AirBnb')
     .setDescription('AirBnb API make by terrancrypt | NodeJS31')

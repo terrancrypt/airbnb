@@ -6,15 +6,18 @@ import { RoomsModule } from './rooms/rooms.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { FirebaseModule } from './firebase/firebase.module';
 
 @Module({
   imports: [
-    PrismaModule,
-    AuthModule,
-    UsersModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    PrismaModule,
+    FirebaseModule,
+    AuthModule,
+    UsersModule,
     RoomsModule,
   ],
   providers: [

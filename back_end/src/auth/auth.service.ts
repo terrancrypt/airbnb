@@ -8,7 +8,12 @@ import {
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { JwtPayload, ResSignInPayLoad, ResSignUpPayload, TokensType } from './types';
+import {
+  JwtPayload,
+  ResSignInPayLoad,
+  ResSignUpPayload,
+  TokensType,
+} from './types';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { ConfigService } from '@nestjs/config';
@@ -24,51 +29,43 @@ export class AuthService {
   ) {}
 
   async signIn(userData: SignInDto): Promise<ResSignInPayLoad> {
-    try {
-      const user = await this.usersService.findAUserByEmail(userData.email);
+    const user = await this.usersService.findAUserByEmail(userData.email);
 
-      if (!user) {
-        throw new UnauthorizedException("Account doesn't exits!");
-      }
-
-      const checkPass = await bcrypt.compare(userData.passWord, user.pass_word);
-
-      if (checkPass === false) {
-        throw new UnauthorizedException('Incorrect password!');
-      }
-
-      const tokens = await this.getTokens(user.id, user.email);
-
-      this.updateRefreshTokenHashed(user.id, tokens.refresh_token);
-
-      return {
-        message: 'Logged in successfully!',
-        data: {
-          userData: { ...user, pass_word: '', hash_refresh_token: '' },
-          tokens,
-        },
-      };
-    } catch {
-      throw new InternalServerErrorException();
+    if (!user) {
+      throw new UnauthorizedException("Account doesn't exits!");
     }
+
+    const checkPass = await bcrypt.compare(userData.passWord, user.pass_word);
+
+    if (checkPass === false) {
+      throw new UnauthorizedException('Incorrect password!');
+    }
+
+    const tokens = await this.getTokens(user.id, user.email);
+
+    this.updateRefreshTokenHashed(user.id, tokens.refresh_token);
+
+    return {
+      message: 'Logged in successfully!',
+      data: {
+        userData: { ...user, pass_word: '', hash_refresh_token: '' },
+        tokens,
+      },
+    };
   }
 
   async signUp(newUserData: SignUpDto): Promise<ResSignUpPayload> {
-    try {
-      const user = await this.usersService.findAUserByEmail(newUserData.email);
+    const user = await this.usersService.findAUserByEmail(newUserData.email);
 
-      if (!user) {
-        const data = await this.usersService.createUser(newUserData);
+    if (!user) {
+      const data = await this.usersService.createUser(newUserData);
 
-        return {
-          message: 'Registered an account successfully!',
-          data,
-        };
-      } else {
-        throw new ConflictException('User already exists!');
-      }
-    } catch {
-      throw new InternalServerErrorException();
+      return {
+        message: 'Registered an account successfully!',
+        data,
+      };
+    } else {
+      throw new ConflictException('User already exists!');
     }
   }
 
@@ -102,7 +99,7 @@ export class AuthService {
         throw new ForbiddenException('Access Denied!', {
           cause: 'User or refresh token does not exist!',
         });
-  
+
       const checkRefreshToken = await bcrypt.compare(
         refreshToken,
         user.hash_refresh_token,
@@ -111,17 +108,20 @@ export class AuthService {
         throw new ForbiddenException('Access Denied!', {
           cause: 'Refresh token does not exist!',
         });
-  
+
       const tokens = await this.getTokens(user.id, user.email);
       await this.updateRefreshTokenHashed(user.id, tokens.refresh_token);
-  
+
       return tokens;
     } catch {
       throw new InternalServerErrorException();
     }
   }
 
-  async updateRefreshTokenHashed(userId: number, refreshToken: string): Promise<void> {
+  async updateRefreshTokenHashed(
+    userId: number,
+    refreshToken: string,
+  ): Promise<void> {
     const hasshReTokens = await bcrypt.hash(refreshToken, 10);
 
     await this.prisma.users.update({

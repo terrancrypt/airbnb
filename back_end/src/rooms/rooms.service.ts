@@ -11,12 +11,14 @@ import { PrismaSevice } from 'src/prisma/prisma.service';
 import { room_images, rooms, users } from '@prisma/client';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { DataRespone } from 'src/types';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class RoomsService {
   constructor(
     private prisma: PrismaSevice,
     private firebase: FirebaseService,
+    private userService: UsersService,
   ) {}
 
   async getAll(): Promise<DataRespone & { data: rooms[] }> {
@@ -237,61 +239,43 @@ export class RoomsService {
     file: Express.Multer.File,
     roomId: number,
   ): Promise<DataRespone & { data: room_images }> {
-    try {
-      const user: users = await this.prisma.users.findUnique({
-        where: {
-          id: userId,
-        },
-      });
-      if (!user) throw new UnauthorizedException();
+    const user: users = await this.userService.findAUserById(userId);
+    if (!user)
+      throw new UnauthorizedException(
+        `You can't upload photos of other people's rooms!`,
+      );
 
-      const room: rooms = await this.prisma.rooms.findUnique({
+    const room: rooms = await this.findUniqueRoomInDB(roomId);
+    if (!room) throw new NotFoundException('Room does not exist!');
+
+    const urlImage = await this.firebase.FirebaseUpload(file);
+
+    const imgData: room_images = await this.createRoomImageInDB(
+      roomId,
+      urlImage,
+    );
+
+    const roomImg = await this.getRoomPrimaryImg(roomId);
+
+    if (!roomImg) {
+      await this.prisma.rooms.updateMany({
         where: {
           id: roomId,
         },
-      });
-      if (!room) throw new NotFoundException('Room does not exist!');
-
-      const urlImage = await this.firebase.FirebaseUpload(file);
-
-      const imgData: room_images = await this.prisma.room_images.create({
         data: {
-          room_id: roomId,
-          url_img: urlImage,
+          primary_img: urlImage,
         },
       });
-
-      const roomImg = await this.prisma.rooms.findUnique({
-        where: {
-          id: roomId,
-        },
-        select: {
-          primary_img: true,
-        },
-      });
-
-      if (!roomImg.primary_img) {
-        await this.prisma.rooms.updateMany({
-          where: {
-            id: roomId,
-          },
-          data: {
-            primary_img: urlImage,
-          },
-        });
-      }
-
-      return {
-        statusCode: HttpStatus.CREATED,
-        message: 'Upload image successfully!',
-        data: imgData,
-      };
-    } catch {
-      throw new InternalServerErrorException();
     }
+
+    return {
+      statusCode: HttpStatus.CREATED,
+      message: 'Upload image successfully!',
+      data: imgData,
+    };
   }
 
-  // =========== Database Functionals ================
+  // =========== Database Methods ================
 
   async findUniqueRoomInDB(roomId: number): Promise<rooms> {
     try {
@@ -418,6 +402,40 @@ export class RoomsService {
       });
 
       return roomDataUpdated;
+    } catch {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async createRoomImageInDB(
+    roomId: number,
+    urlImg: string,
+  ): Promise<room_images> {
+    try {
+      const room_img = await this.prisma.room_images.create({
+        data: {
+          room_id: roomId,
+          url_img: urlImg,
+        },
+      });
+      return room_img;
+    } catch {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async getRoomPrimaryImg(roomId: number): Promise<string>{
+    try {
+      const roomImg = await this.prisma.rooms.findUnique({
+        where: {
+          id: roomId,
+        },
+        select: {
+          primary_img: true,
+        },
+      });
+
+      return roomImg.primary_img;
     } catch {
       throw new InternalServerErrorException();
     }

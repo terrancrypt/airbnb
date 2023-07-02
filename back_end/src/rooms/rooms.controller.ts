@@ -11,24 +11,21 @@ import {
   ParseIntPipe,
   Query,
   Put,
-  InternalServerErrorException,
   Delete,
 } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { GetCurrentUserId, Public } from 'src/common/decorators';
 import {
-  ApiAcceptedResponse,
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
-  ApiDefaultResponse,
   ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
-  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -61,6 +58,9 @@ export class RoomsController {
 
   @Public()
   @Get('get-room-by-id/:id')
+  @ApiOkResponse({
+    description: 'Get room by id successfully!',
+  })
   async getRoomById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<DataRespone & { data: rooms }> {
@@ -87,6 +87,9 @@ export class RoomsController {
 
   @Public()
   @Get('get-rooms-by-address')
+  @ApiOkResponse({
+    description: 'Get room by address successfully!',
+  })
   @HttpCode(HttpStatus.OK)
   async getRoomsByAdress(
     @Query('keyword') keyword: string,
@@ -108,6 +111,10 @@ export class RoomsController {
   }
 
   @Post('update/:roomId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Update success!',
+  })
   @ApiBearerAuth()
   async updateRoom(
     @GetCurrentUserId() userId: number,
@@ -118,6 +125,10 @@ export class RoomsController {
   }
 
   @Delete('detele')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({
+    description: 'Delete successfully!',
+  })
   @ApiBearerAuth()
   async deleteRoom(
     @GetCurrentUserId() userId: number,

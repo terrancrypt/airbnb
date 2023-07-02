@@ -101,14 +101,26 @@ model rooms {
   room_address_id Int
   room_type       Int
   owner_id        Int
+  place_id        Int?
   reservations    reservations[]
   reviews         reviews[]
   room_images     room_images[]
   room_address    room_address   @relation(fields: [room_address_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rooms_ibfk_1")
   room_types      room_types     @relation(fields: [room_type], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rooms_ibfk_2")
   users           users          @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rooms_ibfk_3")
+  places          places?        @relation(fields: [place_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rooms_ibfk_4")
 
   @@index([owner_id], map: "owner_id")
   @@index([room_address_id], map: "room_address_id")
   @@index([room_type], map: "room_type")
+  @@index([place_id], map: "place_id")
+}
+
+model places {
+  id             Int     @id @default(autoincrement())
+  place_name     String  @db.VarChar(255)
+  place_province String  @db.VarChar(255)
+  place_country  String  @db.VarChar(255)
+  place_img      String? @db.VarChar(500)
+  rooms          rooms[]
 }

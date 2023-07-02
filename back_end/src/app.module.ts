@@ -6,8 +6,8 @@ import { RoomsModule } from './rooms/rooms.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
-import { MulterModule } from '@nestjs/platform-express';
 import { FirebaseModule } from './firebase/firebase.module';
+import { ReservationsModule } from './reservations/reservations.module';
 
 @Module({
   imports: [
@@ -19,6 +19,7 @@ import { FirebaseModule } from './firebase/firebase.module';
     AuthModule,
     UsersModule,
     RoomsModule,
+    ReservationsModule,
   ],
   providers: [
     {

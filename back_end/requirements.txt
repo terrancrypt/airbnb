@@ -1,0 +1,11 @@
+reviews CRUD
+
+POST /reviews/create
+GET /revies/get-all
+GET /reviews/get-reviews-by-room/:roomId
+PUT /reviews/update/:reviewId
+DELETE /reviews/delete/:reviewId
+
+Access: 
+- If isAdmin: create, read, update, delete (all)
+- If NOT admin = 

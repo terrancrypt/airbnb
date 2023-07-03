@@ -74,7 +74,7 @@ export class ReservationsService {
   async getAllByUserId(
     userId: number,
   ): Promise<DataRespone & { data: reservations[] }> {
-    const user = await this.userService.findAUserById(userId);
+    const user = await this.userService.findUniqueUserById(userId);
     if (!user) throw new NotFoundException('User not found');
 
     const dataReservations = await this.findManyReservationByUserId(userId);

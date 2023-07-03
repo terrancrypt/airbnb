@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { GetCurrentUserId, Public } from 'src/common/decorators';
+import { GetCurrentUser, GetCurrentUserId, Public, Roles } from 'src/common/decorators';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -32,7 +32,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadImageDto } from './dto/upload-image.dto';
 import { DataRespone } from 'src/types';
-import { room_images, rooms } from '@prisma/client';
+import { room_images, rooms, users } from '@prisma/client';
+import { Role } from 'src/users/enums/role.enum';
 
 @ApiTags('Rooms')
 @ApiUnauthorizedResponse({
@@ -131,10 +132,10 @@ export class RoomsController {
   })
   @ApiBearerAuth()
   async deleteRoom(
-    @GetCurrentUserId() userId: number,
+    @GetCurrentUser() user: users,
     @Param('roomId', ParseIntPipe) roomId: number,
   ): Promise<DataRespone> {
-    return await this.roomsService.deleteRoom(userId, roomId);
+    return await this.roomsService.deleteRoom(user, roomId);
   }
 
   @Put('upload-room-img/:roomId')

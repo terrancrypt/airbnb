@@ -9,6 +9,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { PlacesModule } from './places/places.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { RolesGuard } from './auth/guards';
 
 @Module({
   imports: [
@@ -22,11 +24,16 @@ import { PlacesModule } from './places/places.module';
     RoomsModule,
     ReservationsModule,
     PlacesModule,
+    ReviewsModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

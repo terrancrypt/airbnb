@@ -18,6 +18,7 @@ import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { ConfigService } from '@nestjs/config';
 import { PrismaSevice } from 'src/prisma/prisma.service';
+import { Role } from 'src/users/enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -29,7 +30,7 @@ export class AuthService {
   ) {}
 
   async signIn(userData: SignInDto): Promise<ResSignInPayLoad> {
-    const user = await this.usersService.findAUserByEmail(userData.email);
+    const user = await this.usersService.findUniqueUserByEmail(userData.email);
 
     if (!user) {
       throw new UnauthorizedException("Account doesn't exits!");
@@ -41,7 +42,7 @@ export class AuthService {
       throw new UnauthorizedException('Incorrect password!');
     }
 
-    const tokens = await this.getTokens(user.id, user.email);
+    const tokens = await this.getTokens(user.id, user.email, user.role);
 
     this.updateRefreshTokenHashed(user.id, tokens.refresh_token);
 
@@ -55,10 +56,10 @@ export class AuthService {
   }
 
   async signUp(newUserData: SignUpDto): Promise<ResSignUpPayload> {
-    const user = await this.usersService.findAUserByEmail(newUserData.email);
+    const user = await this.usersService.findUniqueUserByEmail(newUserData.email);
 
     if (!user) {
-      const data = await this.usersService.createUser(newUserData);
+      const data = await this.usersService.createUserInDB(newUserData);
 
       return {
         message: 'Registered an account successfully!',
@@ -93,7 +94,7 @@ export class AuthService {
     refreshToken: string,
   ): Promise<TokensType> {
     try {
-      const user = await this.usersService.findAUserById(userId);
+      const user = await this.usersService.findUniqueUserById(userId);
 
       if (!user || !user.hash_refresh_token)
         throw new ForbiddenException('Access Denied!', {
@@ -109,7 +110,7 @@ export class AuthService {
           cause: 'Refresh token does not exist!',
         });
 
-      const tokens = await this.getTokens(user.id, user.email);
+      const tokens = await this.getTokens(user.id, user.email, Role.User);
       await this.updateRefreshTokenHashed(user.id, tokens.refresh_token);
 
       return tokens;
@@ -134,10 +135,11 @@ export class AuthService {
     });
   }
 
-  async getTokens(userId: number, email: string): Promise<TokensType> {
+  async getTokens(userId: number, email: string, role: string): Promise<TokensType> {
     const payload: JwtPayload = {
       email: email,
       sub: userId,
+      role
     };
 
     const [access_token, refresh_token] = await Promise.all([

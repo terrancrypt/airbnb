@@ -5,6 +5,7 @@ import {
   NotFoundException,
   HttpStatus,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { PrismaSevice } from 'src/prisma/prisma.service';
@@ -12,6 +13,7 @@ import { room_images, rooms, users } from '@prisma/client';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { DataRespone } from 'src/types';
 import { UsersService } from 'src/users/users.service';
+import { Role } from 'src/users/enums/role.enum';
 
 @Injectable()
 export class RoomsService {
@@ -70,7 +72,7 @@ export class RoomsService {
       );
     }
 
-    const dataRooms = await this.findRoomPaginatedInDB(page, pageSize);
+    const dataRooms = await this.findRoomsPaginated(page, pageSize);
 
     return {
       statusCode: 200,
@@ -213,21 +215,25 @@ export class RoomsService {
     };
   }
 
-  async deleteRoom(userId: number, roomId: number): Promise<DataRespone> {
+  async deleteRoom(user: users, roomId: number): Promise<DataRespone> {
     const existingRoom = await this.findUniqueRoomInDB(roomId);
 
     if (!existingRoom) {
       throw new NotFoundException(`Room with id ${roomId} not found.`);
     }
 
-    if (existingRoom.owner_id !== userId) {
-      throw new UnauthorizedException("You can't delete someone else's room!");
-    }
+    if (user.role === Role.Admin || existingRoom.owner_id === user.id) {
+      await this.deleteRoomInDB(roomId);
 
-    return {
-      statusCode: HttpStatus.NO_CONTENT,
-      message: 'Delete room successfully!',
-    };
+      return {
+        statusCode: HttpStatus.NO_CONTENT,
+        message: 'Delete room successfully!',
+      };
+    } else {
+      throw new ForbiddenException(
+        'You do not have permission to delete this room.',
+      );
+    }
   }
 
   async uploadRoomImage(
@@ -235,7 +241,7 @@ export class RoomsService {
     file: Express.Multer.File,
     roomId: number,
   ): Promise<DataRespone & { data: room_images }> {
-    const user: users = await this.userService.findAUserById(userId);
+    const user: users = await this.userService.findUniqueUserById(userId);
     if (!user)
       throw new UnauthorizedException(
         `You can't upload photos of other people's rooms!`,
@@ -292,14 +298,14 @@ export class RoomsService {
     }
   }
 
-  async findRoomPaginatedInDB(
+  async findRoomsPaginated(
     page: number,
     pageSize: number,
   ): Promise<rooms[]> {
     try {
       const skip = (page - 1) * pageSize;
       const take = pageSize;
-      const dataRooms = await this.prisma.rooms.findMany({
+      const data: rooms[] = await this.prisma.rooms.findMany({
         skip,
         take,
         include: {
@@ -308,7 +314,7 @@ export class RoomsService {
         },
       });
 
-      return dataRooms;
+      return data;
     } catch {
       throw new InternalServerErrorException();
     }

@@ -29,6 +29,7 @@ model reviews {
   room_id        Int
   rating         Int
   comment        String       @db.VarChar(500)
+  user_create_id Int
   reservations   reservations @relation(fields: [reservation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reviews_ibfk_1")
   rooms          rooms        @relation(fields: [room_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reviews_ibfk_2")
 

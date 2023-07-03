@@ -8,6 +8,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { ReservationsModule } from './reservations/reservations.module';
+import { PlacesModule } from './places/places.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ReservationsModule } from './reservations/reservations.module';
     UsersModule,
     RoomsModule,
     ReservationsModule,
+    PlacesModule,
   ],
   providers: [
     {

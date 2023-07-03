@@ -58,29 +58,25 @@ export class RoomsService {
     page: number,
     pageSize: number,
   ): Promise<DataRespone & { data: rooms[] }> {
-    try {
-      if (!page && page < 1) {
-        throw new BadRequestException(
-          'Invalid value for page. Page must be a positive integer.',
-        );
-      }
-
-      if (!pageSize && pageSize < 1) {
-        throw new BadRequestException(
-          'Invalid value for pageSize. Page must be a positive integer.',
-        );
-      }
-
-      const dataRooms = await this.findRoomPaginatedInDB(page, pageSize);
-
-      return {
-        statusCode: 200,
-        message: `Get page ${page} with ${pageSize} rooms successfully!`,
-        data: dataRooms,
-      };
-    } catch {
-      throw new InternalServerErrorException();
+    if (!page && page < 1) {
+      throw new BadRequestException(
+        'Invalid value for page. Page must be a positive integer.',
+      );
     }
+
+    if (!pageSize && pageSize < 1) {
+      throw new BadRequestException(
+        'Invalid value for pageSize. Page must be a positive integer.',
+      );
+    }
+
+    const dataRooms = await this.findRoomPaginatedInDB(page, pageSize);
+
+    return {
+      statusCode: 200,
+      message: `Get page ${page} with ${pageSize} rooms successfully!`,
+      data: dataRooms,
+    };
   }
 
   async getRoomsByAddress(
@@ -424,7 +420,7 @@ export class RoomsService {
     }
   }
 
-  async getRoomPrimaryImg(roomId: number): Promise<string>{
+  async getRoomPrimaryImg(roomId: number): Promise<string> {
     try {
       const roomImg = await this.prisma.rooms.findUnique({
         where: {

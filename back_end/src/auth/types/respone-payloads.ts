@@ -1,13 +1,12 @@
 import { users } from '@prisma/client';
 import { TokensType } from './tokens.type';
+import { DataRespone } from 'src/types';
 
-export type ResSignUpPayload = {
-  message: string;
+export type ResponeSignUpPayload = DataRespone & {
   data: users;
 };
 
-export type ResSignInPayLoad = {
-  message: string;
+export type ResponeSignInPayLoad = DataRespone & {
   data: {
     userData: users;
     tokens: TokensType;

@@ -260,8 +260,8 @@ export class UsersService {
 
       const data: users = {
         ...newUserInfo,
-        pass_word: '',
-        hash_refresh_token: '',
+        pass_word: null,
+        hash_refresh_token: null,
       };
 
       return data;

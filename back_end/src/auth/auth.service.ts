@@ -5,6 +5,8 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
   HttpStatus,
+  Inject,
+  forwardRef
 } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -18,10 +20,9 @@ import {
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { ConfigService } from '@nestjs/config';
-import { PrismaSevice } from 'src/prisma/prisma.service';
-import { Role } from 'src/users/enums/role.enum';
 import { users } from '@prisma/client';
 import { DataRespone } from 'src/types';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -29,10 +30,12 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private config: ConfigService,
-    private prisma: PrismaSevice,
   ) {}
 
-  async signIn(userData: SignInDto): Promise<ResponeSignInPayLoad> {
+  async signIn(
+    userData: SignInDto,
+    res: Response,
+  ): Promise<ResponeSignInPayLoad> {
     const user: users = await this.usersService.findUniqueUserByEmail(
       userData.email,
     );
@@ -49,20 +52,27 @@ export class AuthService {
       throw new UnauthorizedException('Incorrect password!');
     }
 
-    const tokens: TokensType = await this.getTokens(
+    const { access_token, refresh_token }: TokensType = await this.getTokens(
       user.id,
       user.email,
       user.role,
     );
 
-    await this.updateRefreshTokenHashed(user.id, tokens.refresh_token);
+    res.cookie('accessToken', access_token, {
+      maxAge: 900000, //15mins
+      httpOnly: true,
+    });
+
+    res.cookie('refreshToken', refresh_token, {
+      maxAge: 864000000, //10days
+      httpOnly: true,
+    });
 
     return {
       statusCode: HttpStatus.OK,
       message: 'Logged in successfully!',
       data: {
-        userData: { ...user, pass_word: '', hash_refresh_token: '' },
-        tokens,
+        userData: { ...user, pass_word: null },
       },
     };
   }
@@ -83,19 +93,10 @@ export class AuthService {
     };
   }
 
-  async logOut(userId: number): Promise<DataRespone> {
+  async logOut(res: Response): Promise<DataRespone> {
     try {
-      await this.prisma.users.updateMany({
-        where: {
-          id: userId,
-          hash_refresh_token: {
-            not: null,
-          },
-        },
-        data: {
-          hash_refresh_token: null,
-        },
-      });
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
       return {
         statusCode: HttpStatus.OK,
         message: 'Logout success!',
@@ -105,57 +106,8 @@ export class AuthService {
     }
   }
 
-  async refreshToken(
-    userId: number,
-    refreshToken: string,
-  ): Promise<TokensType> {
-    try {
-      const user: users = await this.usersService.findUniqueUserById(userId);
-
-      if (!user || !user.hash_refresh_token)
-        throw new ForbiddenException('Access Denied!', {
-          cause: 'User or refresh token does not exist!',
-        });
-
-      const checkRefreshToken = await bcrypt.compare(
-        refreshToken,
-        user.hash_refresh_token,
-      );
-      if (!checkRefreshToken)
-        throw new ForbiddenException('Access Denied!', {
-          cause: 'Refresh token does not exist!',
-        });
-
-      const tokens: TokensType = await this.getTokens(user.id, user.email, Role.User);
-      await this.updateRefreshTokenHashed(user.id, tokens.refresh_token);
-
-      return tokens;
-    } catch {
-      throw new InternalServerErrorException();
-    }
-  }
-
   // =========== Database Methods ================
-  async updateRefreshTokenHashed(
-    userId: number,
-    refreshToken: string,
-  ): Promise<void> {
-    try {
-      const hashReTokens = await bcrypt.hash(refreshToken, 10);
-
-      await this.prisma.users.update({
-        where: {
-          id: userId,
-        },
-        data: {
-          hash_refresh_token: hashReTokens,
-        },
-      });
-    } catch {
-      throw new InternalServerErrorException();
-    }
-  }
-
+ 
   async getTokens(
     userId: number,
     email: string,
@@ -173,7 +125,7 @@ export class AuthService {
           secret: this.config.get<string>('SECRET_ACCESS_TOKEN_KEY'),
           expiresIn: '15m',
         }),
-        this.jwtService.signAsync(payload, {
+        this.jwtService.signAsync({}, {
           secret: this.config.get<string>('SECRET_REFRESH_TOKEN_KEY'),
           expiresIn: '1w',
         }),

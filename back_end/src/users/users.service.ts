@@ -37,6 +37,7 @@ export class UsersService {
     };
   }
 
+  
   async getAllUser(): Promise<DataRespone & { data: users[] }> {
     try {
       const data = await this.prisma.users.findMany({});
@@ -87,7 +88,6 @@ export class UsersService {
         ...user,
         pass_word: null,
         role: null,
-        hash_refresh_token: null,
       },
     };
   }
@@ -181,7 +181,6 @@ export class UsersService {
         data: {
           ...data,
           pass_word: null,
-          hash_refresh_token: null,
         },
       };
     } catch {
@@ -261,7 +260,6 @@ export class UsersService {
       const data: users = {
         ...newUserInfo,
         pass_word: null,
-        hash_refresh_token: null,
       };
 
       return data;

@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { GetCurrentUser, GetCurrentUserId, Public, Roles } from 'src/common/decorators';
+import { GetCurrentUser, GetCurrentUserId, Roles } from 'src/common/decorators';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -47,7 +47,6 @@ import { Role } from 'src/users/enums/role.enum';
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
-  @Public()
   @Get('get-all')
   @ApiOkResponse({
     description: 'Get all room successfully!',
@@ -57,7 +56,6 @@ export class RoomsController {
     return await this.roomsService.getAll();
   }
 
-  @Public()
   @Get('get-room-by-id/:id')
   @ApiOkResponse({
     description: 'Get room by id successfully!',
@@ -68,7 +66,6 @@ export class RoomsController {
     return await this.roomsService.getRoomById(id);
   }
 
-  @Public()
   @Get('get-rooms-paginated')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
@@ -86,7 +83,6 @@ export class RoomsController {
     return await this.roomsService.getRoomsPaginated(page, pageSize);
   }
 
-  @Public()
   @Get('get-rooms-by-address')
   @ApiOkResponse({
     description: 'Get room by address successfully!',

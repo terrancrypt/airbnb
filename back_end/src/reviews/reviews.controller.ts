@@ -13,7 +13,7 @@ import {
 import { ReviewsService } from './reviews.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { GetCurrentUserId, Public, Roles } from 'src/common/decorators';
+import { GetCurrentUserId, Roles } from 'src/common/decorators';
 import { DataRespone } from 'src/types';
 import { reviews } from '@prisma/client';
 import { UpdateReviewDto } from './dto/update-review.dto';
@@ -45,7 +45,6 @@ export class ReviewsController {
     return await this.reviewsService.getAllReview();
   }
 
-  @Public()
   @Get('get-reviews-by-room/:roomId')
   @HttpCode(HttpStatus.OK)
   async getReviewsByRoom(
@@ -75,7 +74,7 @@ export class ReviewsController {
   async deleteReview(
     @GetCurrentUserId() userId: number,
     @Param('reviewId') reviewId: number,
-  ): Promise<DataRespone>  {
+  ): Promise<DataRespone> {
     return await this.reviewsService.deleteReview(userId, reviewId);
   }
 }

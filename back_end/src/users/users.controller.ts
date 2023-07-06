@@ -11,13 +11,15 @@ import {
   Delete,
   ParseIntPipe,
   UseInterceptors,
-  UploadedFile
+  UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
@@ -26,13 +28,14 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { GetCurrentUser, GetCurrentUserId, Public, Roles } from 'src/common/decorators';
+import { GetCurrentUser, GetCurrentUserId, Roles } from 'src/common/decorators';
 import { Role } from './enums/role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { DataRespone } from 'src/types';
 import { users } from '@prisma/client';
 import { JwtPayload } from 'src/auth/types';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard, RolesGuard } from 'src/auth/guards';
 
 @ApiTags('User')
 @ApiInternalServerErrorResponse({
@@ -52,13 +55,14 @@ export class UsersController {
     description: 'Success',
   })
   @ApiConflictResponse({ description: 'Email already registered.' })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async postCreateUser(
     @Body() userData: CreateUserDto,
   ): Promise<DataRespone & { data: users }> {
     return await this.usersService.postCreateUser(userData);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('get-all')
   @Roles(Role.Admin)
   @HttpCode(HttpStatus.OK)
@@ -68,7 +72,7 @@ export class UsersController {
   @ApiForbiddenResponse({
     description: 'Account does not have permissions',
   })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async getAllUser(): Promise<DataRespone & { data: users[] }> {
     return await this.usersService.getAllUser();
   }
@@ -82,7 +86,7 @@ export class UsersController {
     description: 'Invalid value for page or pageSize',
   })
   @Roles(Role.Admin)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async getUserPaginated(
     @Query('page', ParseIntPipe) page: number,
     @Query('pageSize', ParseIntPipe) pageSize: number,
@@ -90,7 +94,6 @@ export class UsersController {
     return await this.usersService.getUserPaginated(page, pageSize);
   }
 
-  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiNotFoundResponse({
     description: 'User not found.',
@@ -100,7 +103,6 @@ export class UsersController {
     return await this.usersService.getUserProfile(userId);
   }
 
-  @Public()
   @Get('search/:fullName')
   async getUserByName(
     @Param('fullName') fullName: string,
@@ -109,7 +111,7 @@ export class UsersController {
   }
 
   @Put('update/:userId')
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async putUpdateUser(
     @GetCurrentUser() user: JwtPayload,
     @Param('userId', ParseIntPipe) userId: number,
@@ -120,7 +122,7 @@ export class UsersController {
 
   @Delete('delete/:userId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async deleteUser(
     @GetCurrentUser() user: JwtPayload,
     @Param('userId', ParseIntPipe) userId: number,
@@ -130,11 +132,11 @@ export class UsersController {
 
   @Post('upload-user-avatar')
   @UseInterceptors(FileInterceptor('file'))
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async postUploadUserAvatar(
     @GetCurrentUserId() userId: number,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return await this.usersService.postUploadUserAvatar(userId, file)
+    return await this.usersService.postUploadUserAvatar(userId, file);
   }
 }

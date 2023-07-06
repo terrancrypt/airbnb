@@ -28,7 +28,6 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Public } from 'src/common/decorators';
 import { DataRespone } from 'src/types';
 import { places } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -58,7 +57,6 @@ export class PlacesController {
     return await this.placesService.createPlace(dataNewPlace);
   }
 
-  @Public()
   @Get('get-all')
   @ApiOkResponse({
     description: 'Success',
@@ -68,7 +66,6 @@ export class PlacesController {
     return this.placesService.getAll();
   }
 
-  @Public()
   @Get('get-a-place/:placeId')
   @ApiOkResponse({
     description: 'Success',
@@ -80,7 +77,6 @@ export class PlacesController {
     return await this.placesService.getOnePlace(placeId);
   }
 
-  @Public()
   @Get('/get-places-paginated')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
@@ -99,46 +95,46 @@ export class PlacesController {
 
   @Put('update/:placeId')
   @ApiOkResponse({
-    description: 'Success'
+    description: 'Success',
   })
   @ApiUnauthorizedResponse({
     description:
       'There is no access_token or the token does not exist or is no longer available.',
   })
   @ApiNotFoundResponse({
-    description: 'Place not found.'
+    description: 'Place not found.',
   })
   @ApiBearerAuth()
   async putUpdatePlace(
     @Param('placeId', ParseIntPipe) placeId: number,
-    @Body() dataPlaceUpdate: CreatePlaceDto
-  ): Promise<DataRespone & {data: places}>{
-    return await this.placesService.putUpdatePlace(placeId,dataPlaceUpdate)
+    @Body() dataPlaceUpdate: CreatePlaceDto,
+  ): Promise<DataRespone & { data: places }> {
+    return await this.placesService.putUpdatePlace(placeId, dataPlaceUpdate);
   }
 
   @Delete('delete/:placeId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({
-    description: "Success!"
+    description: 'Success!',
   })
   @ApiUnauthorizedResponse({
     description:
       'There is no access_token or the token does not exist or is no longer available.',
   })
   @ApiNotFoundResponse({
-    description: 'Place not found.'
+    description: 'Place not found.',
   })
   @ApiBearerAuth()
   async deletePlace(
     @Param('placeId', ParseIntPipe) placeId: number,
-  ):Promise<DataRespone>{
-    return await this.placesService.deletePlace(placeId)
+  ): Promise<DataRespone> {
+    return await this.placesService.deletePlace(placeId);
   }
 
   @Post('upload-place-img/:placeId')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    type: UploadImageDto
+    type: UploadImageDto,
   })
   @ApiOkResponse({
     description: 'Created',
@@ -148,7 +144,7 @@ export class PlacesController {
       'There is no access_token or the token does not exist or is no longer available.',
   })
   @ApiNotFoundResponse({
-    description: 'Place not found.'
+    description: 'Place not found.',
   })
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
@@ -156,7 +152,7 @@ export class PlacesController {
   async uploadPlaceImage(
     @UploadedFile() file: Express.Multer.File,
     @Param('placeId', ParseIntPipe) placeId: number,
-  ): Promise<DataRespone & { data: places}> {
-    return await this.placesService.uploadPlaceImage(placeId, file)
+  ): Promise<DataRespone & { data: places }> {
+    return await this.placesService.uploadPlaceImage(placeId, file);
   }
 }

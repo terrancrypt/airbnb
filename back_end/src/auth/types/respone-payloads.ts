@@ -9,6 +9,5 @@ export type ResponeSignUpPayload = DataRespone & {
 export type ResponeSignInPayLoad = DataRespone & {
   data: {
     userData: users;
-    tokens: TokensType;
   };
 };

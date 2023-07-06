@@ -22,7 +22,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { GetCurrentUserId, Public } from 'src/common/decorators';
+import { GetCurrentUserId } from 'src/common/decorators';
 import { reservations } from '@prisma/client';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { DataRespone } from 'src/types';

@@ -11,6 +11,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { JwtAuthGuard, RolesGuard } from './auth/guards';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth/auth.service';
+import { SessionService } from './auth/session/session.service';
 
 @Module({
   imports: [
@@ -27,6 +28,6 @@ import { AuthService } from './auth/auth.service';
     PlacesModule,
     ReviewsModule,
   ],
-  providers:[AuthService]
+  providers:[AuthService, SessionService]
 })
 export class AppModule {}

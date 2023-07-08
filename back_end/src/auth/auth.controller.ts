@@ -10,7 +10,7 @@ import {
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
-import { ResponeSignInPayLoad, ResponeSignUpPayload } from './types';
+import { JwtPayload, ResponeSignInPayLoad, ResponeSignUpPayload } from './types';
 import {
   ApiBearerAuth,
   ApiConflictResponse,
@@ -23,6 +23,8 @@ import {
 import { DataRespone } from 'src/types';
 import { Response } from 'express';
 import { JwtAuthGuard } from './guards';
+import { GetCurrentUser, GetCurrentUserId } from 'src/common/decorators';
+import { users } from '@prisma/client';
 
 @ApiTags('Auth')
 @ApiInternalServerErrorResponse({
@@ -67,8 +69,11 @@ export class AuthController {
   })
   @HttpCode(HttpStatus.OK)
   async logOut(
+    @GetCurrentUserId() userId: number,
+    @GetCurrentUser() user: JwtPayload,
     @Res({ passthrough: true }) res: Response,
   ): Promise<DataRespone> {
-    return await this.authService.logOut(res);
+    console.log("userId: ",userId);
+    return await this.authService.logOut(res, user);
   }
 }

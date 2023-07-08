@@ -1,22 +1,40 @@
-import { Injectable, ExecutionContext, Inject,forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { JwtPayload, } from '../types';
+import { JwtPayload } from '../types';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { Response } from 'express';
+import { NextFunction, Response } from 'express';
 import { AuthService } from '../auth.service';
+import { SessionService } from '../session/session.service';
+import { Reflector } from '@nestjs/core';
+import { IS_PUBLIC_KEY } from 'src/common/decorators';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(
+    private reflector: Reflector,
     private jwtService: JwtService,
     private config: ConfigService,
-    private authService: AuthService
+    private authService: AuthService,
+    private sessionService: SessionService,
   ) {
     super();
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse() as Response;
     const { accessToken, refreshToken } = request.cookies;
@@ -27,7 +45,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     );
 
     if (payload) {
-      return true;
+      return (await super.canActivate(context)) as boolean;
     }
 
     const { payload: decoded } =
@@ -36,13 +54,22 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         : { payload: null };
 
     if (!decoded) {
-      return true;
+      return (await super.canActivate(context)) as boolean;
     }
+
+    const session = await this.sessionService.getSession(decoded.sessionId);
+
+    if (!session) {
+      return (await super.canActivate(context)) as boolean;
+    }
+
+    await this.sessionService.upTimeSession(decoded.sessionId);
 
     const { access_token, refresh_token } = await this.authService.getTokens(
       decoded.sub,
       decoded.email,
       decoded.role,
+      session.id,
     );
 
     response.cookie('accessToken', access_token, {
@@ -57,9 +84,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     request.cookies['accessToken'] = access_token;
 
-    return true;
+    return (await super.canActivate(context)) as boolean;
   }
-
 
   private async verifyJWT(
     token: string,

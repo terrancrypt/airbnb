@@ -31,7 +31,6 @@
     "@nestjs/swagger": "^7.0.4",
     "@prisma/client": "^4.16.1",
     "@types/cron": "^2.0.1",
-    "@types/firebase": "^3.2.1",
     "bcrypt": "^5.1.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",

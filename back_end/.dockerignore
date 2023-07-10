@@ -2,7 +2,6 @@
 node_modules    # Ignore local node_modules folder
 npm-debug.log   # Debug files
 Dockerfile      # The dockerfile
-.git            # The git history
 .gitignore      #
 .env-*          # Any other environment that don't want to include
 *.md            # Any 

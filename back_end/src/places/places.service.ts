@@ -10,6 +10,7 @@ import { DataRespone } from 'src/types';
 import { places } from '@prisma/client';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { PrismaSevice } from 'src/prisma/prisma.service';
+import { ResponeAPlace, ResponePlaces } from './types';
 
 @Injectable()
 export class PlacesService {
@@ -18,9 +19,7 @@ export class PlacesService {
     private firebase: FirebaseService,
   ) {}
 
-  async createPlace(
-    dataNewPlace: CreatePlaceDto,
-  ): Promise<DataRespone & { data: places }> {
+  async createPlace(dataNewPlace: CreatePlaceDto): Promise<ResponeAPlace> {
     try {
       const data = await this.prisma.places.create({
         data: {
@@ -40,7 +39,7 @@ export class PlacesService {
     }
   }
 
-  async getAll(): Promise<DataRespone & { data: places[] }> {
+  async getAll(): Promise<ResponePlaces> {
     try {
       const data = await this.prisma.places.findMany();
 
@@ -54,7 +53,7 @@ export class PlacesService {
     }
   }
 
-  async getOnePlace(placeId: number): Promise<DataRespone & { data: places }> {
+  async getOnePlace(placeId: number): Promise<ResponeAPlace> {
     const data = await this.findOnePlaceInDB(placeId);
 
     if (!data) throw new NotFoundException('Not place found.');
@@ -69,7 +68,7 @@ export class PlacesService {
   async getPlacesPaginated(
     page: number,
     pageSize: number,
-  ): Promise<DataRespone & { data: places[] }> {
+  ): Promise<ResponePlaces> {
     if (!page && page < 1) {
       throw new BadRequestException(
         'Invalid value for page. Page must be a positive integer.',
@@ -94,7 +93,7 @@ export class PlacesService {
   async putUpdatePlace(
     placeId: number,
     dataPlaceUpdate: CreatePlaceDto,
-  ): Promise<DataRespone & { data: places }> {
+  ): Promise<ResponeAPlace> {
     const place = await this.findOnePlaceInDB(placeId);
     if (!place) throw new NotFoundException('Place does not exist.');
 
@@ -122,7 +121,7 @@ export class PlacesService {
   async uploadPlaceImage(
     placeId: number,
     file: Express.Multer.File,
-  ): Promise<DataRespone & { data: places }> {
+  ): Promise<ResponeAPlace> {
     const place = await this.findOnePlaceInDB(placeId);
     if (!place) throw new NotFoundException('Place does not exist.');
 

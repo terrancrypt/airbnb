@@ -10,7 +10,10 @@ import { UsersService } from 'src/users/users.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { RoomsService } from 'src/rooms/rooms.service';
 import { DataRespone } from 'src/types';
-import { reservations } from '@prisma/client';
+import { reservations, rooms, users } from '@prisma/client';
+import { ResponeAReser, ResponeResers } from './types';
+import { JwtPayload } from 'src/auth/types';
+import { Role } from 'src/users/enums/role.enum';
 
 @Injectable()
 export class ReservationsService {
@@ -20,19 +23,17 @@ export class ReservationsService {
     private roomService: RoomsService,
   ) {}
 
-  async createReservation(
+  async postCreateReservation(
     userId: number,
     dataBooking: CreateBookingDto,
-  ): Promise<
-    DataRespone & {
-      data: reservations;
-    }
-  > {
-    const room = await this.roomService.findUniqueRoomInDB(dataBooking.roomId);
+  ): Promise<ResponeAReser> {
+    const room: rooms = await this.roomService.findUniqueRoomInDB(
+      dataBooking.roomId,
+    );
 
     if (!room) throw new NotFoundException('Room not found.');
 
-    const dataReservation = await this.createRevervationInDB(
+    const dataReservation: reservations = await this.createRevervationInDB(
       userId,
       dataBooking,
     );
@@ -44,9 +45,10 @@ export class ReservationsService {
     };
   }
 
-  async getAllRevervations(): Promise<DataRespone & { data: reservations[] }> {
+  async getAllRevervations(): Promise<ResponeResers> {
     try {
-      const reservations = await this.prisma.reservations.findMany({});
+      const reservations: reservations[] =
+        await this.prisma.reservations.findMany({});
 
       return {
         statusCode: HttpStatus.OK,
@@ -58,10 +60,10 @@ export class ReservationsService {
     }
   }
 
-  async getUniqueResvervation(
-    reservationId: number,
-  ): Promise<DataRespone & { data: reservations }> {
-    const existingResers = await this.findUniqueReservation(reservationId);
+  async getUniqueResvervation(reservationId: number): Promise<ResponeAReser> {
+    const existingResers: reservations = await this.findUniqueReservation(
+      reservationId,
+    );
     if (!existingResers) throw new NotFoundException('No booking found.');
 
     return {
@@ -71,13 +73,12 @@ export class ReservationsService {
     };
   }
 
-  async getAllByUserId(
-    userId: number,
-  ): Promise<DataRespone & { data: reservations[] }> {
-    const user = await this.userService.findUniqueUserById(userId);
+  async getAllByUserId(userId: number): Promise<ResponeResers> {
+    const user: users = await this.userService.findUniqueUserById(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    const dataReservations = await this.findManyReservationByUserId(userId);
+    const dataReservations: reservations[] =
+      await this.findManyReservationByUserId(userId);
     return {
       statusCode: HttpStatus.OK,
       message: 'Success!',
@@ -88,8 +89,10 @@ export class ReservationsService {
   async putUpdateReservation(
     revervationId: number,
     newBookingData: CreateBookingDto,
-  ): Promise<DataRespone & { data: reservations }> {
-    const existingResers = await this.findUniqueReservation(revervationId);
+  ): Promise<ResponeAReser> {
+    const existingResers: reservations = await this.findUniqueReservation(
+      revervationId,
+    );
     if (!existingResers) throw new NotFoundException('No booking found.');
 
     const dataUpdate = await this.updateReveservationInDB(
@@ -105,23 +108,28 @@ export class ReservationsService {
   }
 
   async deleteReservation(
-    userId: number,
+    user: JwtPayload,
     reservationId: number,
   ): Promise<DataRespone> {
-    const existingResers = await this.findUniqueReservation(reservationId);
+    const existingResers: reservations = await this.findUniqueReservation(
+      reservationId,
+    );
 
     if (!existingResers)
       throw new NotFoundException('Reservation does not exist!');
 
-    if (userId !== existingResers.user_id)
-      throw new ForbiddenException(`You cannot delete someone else's booking!`);
+    if (user.role === Role.Admin || user.sub === existingResers.user_id) {
+      await this.deleteResersInDB(reservationId);
 
-    await this.deleteResersInDB(reservationId);
-
-    return {
-      statusCode: HttpStatus.NO_CONTENT,
-      message: 'Delete success!',
-    };
+      return {
+        statusCode: HttpStatus.NO_CONTENT,
+        message: 'Delete success!',
+      };
+    } else {
+      throw new ForbiddenException(
+        `You do not have permission to delete this room.`,
+      );
+    }
   }
 
   // =========== Database Methods ================

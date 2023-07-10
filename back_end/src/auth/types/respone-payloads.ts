@@ -1,5 +1,4 @@
 import { users } from '@prisma/client';
-import { TokensType } from './tokens.type';
 import { DataRespone } from 'src/types';
 
 export type ResponeSignUpPayload = DataRespone & {
@@ -8,7 +7,6 @@ export type ResponeSignUpPayload = DataRespone & {
 
 export type ResponeSignInPayLoad = DataRespone & {
   data: {
-    userData: users;
-    tokens: TokensType;
+    userData: users ;
   };
 };

@@ -38,18 +38,17 @@ model reviews {
 }
 
 model users {
-  id                 Int            @id @default(autoincrement())
-  full_name          String         @db.VarChar(255)
-  email              String         @unique(map: "email") @db.VarChar(255)
-  pass_word          String         @db.VarChar(255)
-  phone_number       String?        @db.VarChar(50)
-  birth_day          DateTime?      @db.Date
-  gender             String?        @db.VarChar(50)
-  profile_img        String?        @db.VarChar(500)
-  role               String?        @db.VarChar(50)
-  hash_refresh_token String?        @db.VarChar(255)
-  reservations       reservations[]
-  rooms              rooms[]
+  id           Int            @id @default(autoincrement())
+  full_name    String         @db.VarChar(255)
+  email        String         @unique(map: "email") @db.VarChar(255)
+  pass_word    String         @db.VarChar(255)
+  phone_number String?        @db.VarChar(50)
+  birth_day    DateTime?      @db.Date
+  gender       String?        @db.VarChar(50)
+  profile_img  String?        @db.VarChar(500)
+  role         String?        @db.VarChar(50)
+  reservations reservations[]
+  rooms        rooms[]
 }
 
 model room_address {
@@ -124,4 +123,12 @@ model places {
   place_country  String  @db.VarChar(255)
   place_img      String? @db.VarChar(500)
   rooms          rooms[]
+}
+
+model sessions {
+  id         Int      @id @default(autoincrement())
+  email      String   @db.VarChar(255)
+  valid      Boolean
+  start_time DateTime @db.DateTime(0)
+  end_time   DateTime @db.DateTime(0)
 }

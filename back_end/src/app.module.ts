@@ -9,9 +9,11 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { PlacesModule } from './places/places.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { JwtAuthGuard, RolesGuard } from './auth/guards';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule} from '@nestjs/jwt';
 import { AuthService } from './auth/auth.service';
 import { SessionService } from './auth/session/session.service';
+import { ScheduleModule } from '@nestjs/schedule';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -19,6 +21,7 @@ import { SessionService } from './auth/session/session.service';
       isGlobal: true,
     }),
     JwtModule.register({}),
+    ScheduleModule.forRoot(),
     PrismaModule,
     FirebaseModule,
     AuthModule,
@@ -28,6 +31,17 @@ import { SessionService } from './auth/session/session.service';
     PlacesModule,
     ReviewsModule,
   ],
-  providers:[AuthService, SessionService]
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+    AuthService,
+    SessionService,
+  ],
 })
 export class AppModule {}

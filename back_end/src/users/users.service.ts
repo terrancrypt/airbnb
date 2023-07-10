@@ -15,6 +15,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { DataRespone } from 'src/types';
 import { JwtPayload } from 'src/auth/types';
 import { FirebaseService } from 'src/firebase/firebase.service';
+import { ResponeAUser, ResponeUsers } from './types';
 
 @Injectable()
 export class UsersService {
@@ -23,9 +24,7 @@ export class UsersService {
     private firebase: FirebaseService,
   ) {}
 
-  async postCreateUser(
-    userData: CreateUserDto,
-  ): Promise<DataRespone & { data: users }> {
+  async postCreateUser(userData: CreateUserDto): Promise<ResponeAUser> {
     const isUser: users = await this.findUniqueUserByEmail(userData.email);
     if (isUser) throw new ConflictException('Email already exists!');
 
@@ -37,10 +36,9 @@ export class UsersService {
     };
   }
 
-  
-  async getAllUser(): Promise<DataRespone & { data: users[] }> {
+  async getAllUser(): Promise<ResponeUsers> {
     try {
-      const data = await this.prisma.users.findMany({});
+      const data: users[] = await this.prisma.users.findMany({});
 
       return {
         statusCode: HttpStatus.OK,
@@ -55,7 +53,7 @@ export class UsersService {
   async getUserPaginated(
     page: number,
     pageSize: number,
-  ): Promise<DataRespone & { data: users[] }> {
+  ): Promise<ResponeUsers> {
     if (!page && page < 1) {
       throw new BadRequestException(
         'Invalid value for page. Page must be a positive integer.',
@@ -77,7 +75,7 @@ export class UsersService {
     };
   }
 
-  async getUserProfile(userId: number): Promise<DataRespone & { data: users }> {
+  async getUserProfile(userId: number): Promise<ResponeAUser> {
     const user: users = await this.findUniqueUserById(userId);
     if (!user) throw new NotFoundException('User not found!');
 
@@ -92,9 +90,7 @@ export class UsersService {
     };
   }
 
-  async getUserByName(
-    fullName: string,
-  ): Promise<DataRespone & { data: users[] }> {
+  async getUserByName(fullName: string): Promise<ResponeUsers> {
     try {
       const data: users[] = await this.prisma.users.findMany({
         where: {
@@ -108,7 +104,7 @@ export class UsersService {
         data,
       };
     } catch {
-      throw new InternalServerErrorException();
+      throw new NotFoundException('User not found!');
     }
   }
 
@@ -116,18 +112,18 @@ export class UsersService {
     user: JwtPayload,
     userId: number,
     dataUpdate: CreateUserDto,
-  ): Promise<DataRespone & { data: users }> {
+  ): Promise<ResponeAUser> {
     if (user.role === Role.Admin || user.sub === userId) {
-      const isUser = await this.findUniqueUserById(userId);
+      const isUser: users = await this.findUniqueUserById(userId);
       if (!isUser) throw new NotFoundException('User not found.');
 
-      const isUserEmail = await this.findUniqueUserByEmail(dataUpdate.email);
+      const isUserEmail: users = await this.findUniqueUserByEmail(dataUpdate.email);
 
       if (isUserEmail && isUserEmail.id !== userId) {
         throw new ConflictException('Email already exist!');
       }
 
-      const data = await this.updateUser(userId, dataUpdate);
+      const data: users = await this.updateUser(userId, dataUpdate);
 
       return {
         statusCode: HttpStatus.OK,
@@ -143,7 +139,7 @@ export class UsersService {
 
   async deleteUser(user: JwtPayload, userId: number): Promise<DataRespone> {
     if (user.role === Role.Admin || user.sub === userId) {
-      const isUser = await this.findUniqueUserById(userId);
+      const isUser: users = await this.findUniqueUserById(userId);
       if (!isUser) throw new NotFoundException('User not found.');
 
       await this.deleteUserInDB(userId);
@@ -162,9 +158,9 @@ export class UsersService {
   async postUploadUserAvatar(
     userId: number,
     file: Express.Multer.File,
-  ): Promise<DataRespone & { data: users }> {
+  ): Promise<ResponeAUser> {
     try {
-      const urlImage = await this.firebase.FirebaseUpload(file);
+      const urlImage: string = await this.firebase.FirebaseUpload(file);
 
       const data: users = await this.prisma.users.update({
         where: {
@@ -245,7 +241,7 @@ export class UsersService {
         birthday = new Date(newUserData.birthday);
       }
 
-      const newUserInfo = await this.prisma.users.create({
+      const newUserInfo: users = await this.prisma.users.create({
         data: {
           full_name: newUserData.fullName,
           email: newUserData.email,

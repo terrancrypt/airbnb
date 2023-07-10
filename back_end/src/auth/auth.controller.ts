@@ -10,10 +10,15 @@ import {
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
-import { JwtPayload, ResponeSignInPayLoad, ResponeSignUpPayload } from './types';
+import {
+  JwtPayload,
+  ResponeSignInPayLoad,
+  ResponeSignUpPayload,
+} from './types';
 import {
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
@@ -23,8 +28,11 @@ import {
 import { DataRespone } from 'src/types';
 import { Response } from 'express';
 import { JwtAuthGuard } from './guards';
-import { GetCurrentUser, GetCurrentUserId } from 'src/common/decorators';
-import { users } from '@prisma/client';
+import {
+  GetCurrentUser,
+  GetCurrentUserId,
+  Public,
+} from 'src/common/decorators';
 
 @ApiTags('Auth')
 @ApiInternalServerErrorResponse({
@@ -34,9 +42,10 @@ import { users } from '@prisma/client';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Public()
   @Post('local/signin')
   @ApiOkResponse({
-    description: 'Logged success!',
+    description: 'Success!',
   })
   @HttpCode(HttpStatus.OK)
   @ApiUnauthorizedResponse({
@@ -49,6 +58,7 @@ export class AuthController {
     return await this.authService.signIn(userData, res);
   }
 
+  @Public()
   @Post('local/signup')
   @ApiCreatedResponse({
     description: 'Success!',
@@ -61,19 +71,16 @@ export class AuthController {
     return await this.authService.signUp(newUserData);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('logout')
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOkResponse({
     description: 'Success!',
   })
   @HttpCode(HttpStatus.OK)
   async logOut(
-    @GetCurrentUserId() userId: number,
     @GetCurrentUser() user: JwtPayload,
     @Res({ passthrough: true }) res: Response,
   ): Promise<DataRespone> {
-    console.log("userId: ",userId);
     return await this.authService.logOut(res, user);
   }
 }

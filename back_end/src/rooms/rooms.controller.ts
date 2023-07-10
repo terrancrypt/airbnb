@@ -15,13 +15,18 @@ import {
 } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { GetCurrentUser, GetCurrentUserId, Roles } from 'src/common/decorators';
+import {
+  GetCurrentUser,
+  GetCurrentUserId,
+  Public,
+} from 'src/common/decorators';
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiCookieAuth,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -32,13 +37,12 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadImageDto } from './dto/upload-image.dto';
 import { DataRespone } from 'src/types';
-import { room_images, rooms, users } from '@prisma/client';
-import { Role } from 'src/users/enums/role.enum';
+import { ResponeARoom, ResponeRooms, ResponeUploadRoomImg } from './types';
+import { JwtPayload } from 'src/auth/types';
 
 @ApiTags('Rooms')
 @ApiUnauthorizedResponse({
-  description:
-    'There is no access_token or the token does not exist or is no longer available.',
+  description: 'Token expired or no token',
 })
 @ApiInternalServerErrorResponse({
   description: 'Internal Server Error!',
@@ -47,25 +51,28 @@ import { Role } from 'src/users/enums/role.enum';
 export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
+  @Public()
   @Get('get-all')
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     description: 'Get all room successfully!',
   })
-  @HttpCode(HttpStatus.OK)
-  async getAllR(): Promise<DataRespone & { data: rooms[] }> {
-    return await this.roomsService.getAll();
+  async getAllRooms(): Promise<ResponeRooms> {
+    return await this.roomsService.getAllRooms();
   }
 
+  @Public()
   @Get('get-room-by-id/:id')
   @ApiOkResponse({
     description: 'Get room by id successfully!',
   })
   async getRoomById(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<DataRespone & { data: rooms }> {
+  ): Promise<ResponeARoom> {
     return await this.roomsService.getRoomById(id);
   }
 
+  @Public()
   @Get('get-rooms-paginated')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
@@ -79,10 +86,11 @@ export class RoomsController {
   async getRoomsPaginated(
     @Query('page', ParseIntPipe) page: number,
     @Query('pageSize', ParseIntPipe) pageSize: number,
-  ): Promise<DataRespone & { data: rooms[] }> {
+  ): Promise<ResponeRooms> {
     return await this.roomsService.getRoomsPaginated(page, pageSize);
   }
 
+  @Public()
   @Get('get-rooms-by-address')
   @ApiOkResponse({
     description: 'Get room by address successfully!',
@@ -90,7 +98,7 @@ export class RoomsController {
   @HttpCode(HttpStatus.OK)
   async getRoomsByAdress(
     @Query('keyword') keyword: string,
-  ): Promise<DataRespone & { data: rooms[] }> {
+  ): Promise<ResponeRooms> {
     return await this.roomsService.getRoomsByAddress(keyword);
   }
 
@@ -98,26 +106,26 @@ export class RoomsController {
   @ApiCreatedResponse({
     description: 'Created',
   })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @HttpCode(HttpStatus.CREATED)
-  async createRoom(
+  async postCreateRoom(
     @GetCurrentUserId() userId: number,
     @Body() newRoomData: CreateRoomDto,
-  ): Promise<DataRespone & { data: rooms }> {
-    return await this.roomsService.createRoom(userId, newRoomData);
+  ): Promise<ResponeARoom> {
+    return await this.roomsService.postCreateRoom(userId, newRoomData);
   }
 
-  @Post('update/:roomId')
+  @Put('update/:roomId')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     description: 'Update success!',
   })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async updateRoom(
     @GetCurrentUserId() userId: number,
     @Param('roomId', ParseIntPipe) roomId: number,
     @Body() roomUpdateData: CreateRoomDto,
-  ) {
+  ): Promise<ResponeARoom> {
     return await this.roomsService.updateRoom(userId, roomId, roomUpdateData);
   }
 
@@ -126,15 +134,19 @@ export class RoomsController {
   @ApiNoContentResponse({
     description: 'Delete successfully!',
   })
-  @ApiBearerAuth()
+  @ApiForbiddenResponse({
+    description:
+      'Do not have permission, administrators or users themselves can delete their rooms',
+  })
+  @ApiCookieAuth()
   async deleteRoom(
-    @GetCurrentUser() user: users,
+    @GetCurrentUser() user: JwtPayload,
     @Param('roomId', ParseIntPipe) roomId: number,
   ): Promise<DataRespone> {
     return await this.roomsService.deleteRoom(user, roomId);
   }
 
-  @Put('upload-room-img/:roomId')
+  @Post('upload-room-img/:roomId')
   @ApiConsumes('multipart/form-data')
   @ApiCreatedResponse({
     description: 'Created',
@@ -145,14 +157,14 @@ export class RoomsController {
   @ApiNotFoundResponse({
     description: 'RoomId does not exist.',
   })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('file'))
   async uploadRoomImage(
     @GetCurrentUserId() userId: number,
     @UploadedFile() file: Express.Multer.File,
     @Param('roomId', ParseIntPipe) roomId: number,
-  ): Promise<DataRespone & { data: room_images }> {
+  ): Promise<ResponeUploadRoomImg> {
     return await this.roomsService.uploadRoomImage(userId, file, roomId);
   }
 }

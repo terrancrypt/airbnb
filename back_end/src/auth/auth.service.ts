@@ -103,7 +103,7 @@ export class AuthService {
       res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
 
-      this.sessionService.invalidateSession(user.sessionId);
+      this.sessionService.deleleSession(user.sessionId);
 
       return {
         statusCode: HttpStatus.OK,
@@ -114,8 +114,7 @@ export class AuthService {
     }
   }
 
-  // =========== Database Methods ================
-
+  // =========== JWT Methods ================
   async getTokens(
     userId: number,
     email: string,
@@ -135,13 +134,10 @@ export class AuthService {
           secret: this.config.get<string>('SECRET_ACCESS_TOKEN_KEY'),
           expiresIn: '15m',
         }),
-        this.jwtService.signAsync(
-          { sessionId },
-          {
-            secret: this.config.get<string>('SECRET_REFRESH_TOKEN_KEY'),
-            expiresIn: '1w',
-          },
-        ),
+        this.jwtService.signAsync(payload, {
+          secret: this.config.get<string>('SECRET_REFRESH_TOKEN_KEY'),
+          expiresIn: '1w',
+        }),
       ]);
 
       return {

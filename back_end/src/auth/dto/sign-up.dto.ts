@@ -4,20 +4,20 @@ import { Role } from 'src/users/enums/role.enum';
 
 export class SignUpDto {
   @ApiProperty({
-    example: 'John',
+    example: 'Terran',
   })
   @IsNotEmpty()
   fullName: string;
 
   @ApiProperty({
-    example: 'john@gmail.com',
+    example: 'terran@gmail.com',
   })
   @IsNotEmpty()
   @IsEmail()
   email: string;
 
   @ApiProperty({
-    example: 'John@123',
+    example: 'Terran@123',
   })
   @IsNotEmpty()
   @IsStrongPassword({

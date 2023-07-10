@@ -1,140 +1,134 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreateRoomDto {
+  @ApiProperty({
+    example: 'This is my room',
+  })
+  @IsNotEmpty()
+  title: string;
 
-    @ApiProperty({
-        example: "This is my room"
-    })
-    @IsNotEmpty()
-    title: string;
+  @ApiProperty({
+    example: 2,
+  })
+  @IsNotEmpty()
+  maxGuests: number;
 
-    @ApiProperty({
-        example: 2
-    })
-    @IsNotEmpty()
-    max_guests: number;
+  @ApiProperty({
+    example: 1,
+  })
+  @IsNotEmpty()
+  totalBedrooms: number;
 
-    @ApiProperty({
-        example: 1
-    })
-    @IsNotEmpty()
-    total_bedrooms: number;
+  @ApiProperty({
+    example: 1,
+  })
+  @IsNotEmpty()
+  totalBeds: number;
 
-    
-    @ApiProperty({
-        example: 1
-    })
-    @IsNotEmpty()
-    total_beds: number;
+  @ApiProperty({
+    example: 1,
+  })
+  @IsNotEmpty()
+  totalBathrooms: number;
 
-    
-    @ApiProperty({
-        example: 1
-    })
-    @IsNotEmpty()
-    total_bathrooms: number;
-    
-    
-    @ApiProperty({
-        example: "This is my room description"
-    })
-    @IsNotEmpty()
-    description: string
-    
-    @ApiProperty({
-        example: 350000
-    })
-    @IsNotEmpty()
-    price: number;
+  @ApiProperty({
+    example: 'This is my room description',
+  })
+  @IsNotEmpty()
+  description: string;
 
-    @ApiProperty({
-        example: true
-    })
-    @IsNotEmpty()
-    has_tv: boolean;
-    
-    @ApiProperty({
-        example: false
-    })
-    @IsNotEmpty()
-    has_kitchen: boolean;
+  @ApiProperty({
+    example: 350000,
+  })
+  @IsNotEmpty()
+  price: number;
 
-    @ApiProperty({
-        example: true
-    })
-    @IsNotEmpty()
-    has_air_con: boolean;
+  @ApiProperty({
+    example: true,
+  })
+  @IsNotEmpty()
+  hasTv: boolean;
 
-    @ApiProperty({
-        example: true
-    })
-    @IsNotEmpty()
-    has_wifi: boolean;
+  @ApiProperty({
+    example: false,
+  })
+  @IsNotEmpty()
+  hasKitchen: boolean;
 
-    @ApiProperty({
-        example: false
-    })
-    @IsNotEmpty()
-    has_washer: boolean;
+  @ApiProperty({
+    example: true,
+  })
+  @IsNotEmpty()
+  hasAirConditioner: boolean;
 
-    @ApiProperty({
-        example: false
-    })
-    @IsNotEmpty()
-    has_iron: boolean;
+  @ApiProperty({
+    example: true,
+  })
+  @IsNotEmpty()
+  hasWifi: boolean;
 
-    @ApiProperty({
-        example: true
-    })
-    @IsNotEmpty()
-    has_pool: boolean;
+  @ApiProperty({
+    example: false,
+  })
+  @IsNotEmpty()
+  hasWasher: boolean;
 
-    @ApiProperty({
-        example: true
-    })
-    @IsNotEmpty()
-    has_parking: boolean;
+  @ApiProperty({
+    example: false,
+  })
+  @IsNotEmpty()
+  hasIron: boolean;
 
-    @ApiProperty({
-        example: false
-    })
-    @IsNotEmpty()
-    pets_allowed: boolean;
+  @ApiProperty({
+    example: true,
+  })
+  @IsNotEmpty()
+  hasPool: boolean;
 
-    latitude: string;
+  @ApiProperty({
+    example: true,
+  })
+  @IsNotEmpty()
+  hasParking: boolean;
 
-    longtitude: string;
+  @ApiProperty({
+    example: false,
+  })
+  @IsNotEmpty()
+  petsAllowed: boolean;
 
-    @ApiProperty({
-        example: "123 Ngo Quyen"
-    })
-    @IsNotEmpty()
-    street: string;
+  @ApiProperty({
+    example: '123 Ngo Quyen',
+  })
+  @IsNotEmpty()
+  street: string;
 
-    @ApiProperty({
-        example: "Quan 1"
-    })
-    @IsNotEmpty()
-    state: string;
+  @ApiProperty({
+    example: 'Quan 1',
+  })
+  @IsNotEmpty()
+  state: string;
 
-    @ApiProperty({
-        example: "Ho Chi Minh City"
-    })
-    @IsNotEmpty()
-    city: string;
+  @ApiProperty({
+    example: 'Ho Chi Minh City',
+  })
+  @IsNotEmpty()
+  city: string;
 
-    @ApiProperty({
-        example: "Viet Nam"
-    })
-    @IsNotEmpty()
-    country: string;
+  @ApiProperty({
+    example: 'Viet Nam',
+  })
+  @IsNotEmpty()
+  country: string;
 
-    @ApiProperty({
-        example: 2,
-        description: " room type 1: Apartment, type 2: Hotel, type 3: Home"
-    })
-    @IsNotEmpty()
-    room_type: number;
+  @ApiProperty({
+    example: 2,
+    description: 'room type 1: Apartment, type 2: Hotel, type 3: Home',
+  })
+  @IsNotEmpty()
+  roomType: number;
 
+  @ApiProperty({ example: 1 })
+  placeId: number;
 }

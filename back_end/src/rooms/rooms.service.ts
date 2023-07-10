@@ -9,11 +9,13 @@ import {
 } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { PrismaSevice } from 'src/prisma/prisma.service';
-import { room_images, rooms, users } from '@prisma/client';
+import { room_address, room_images, rooms, users } from '@prisma/client';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { DataRespone } from 'src/types';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/role.enum';
+import { ResponeARoom, ResponeRooms, ResponeUploadRoomImg } from './types';
+import { JwtPayload } from 'src/auth/types';
 
 @Injectable()
 export class RoomsService {
@@ -23,13 +25,14 @@ export class RoomsService {
     private userService: UsersService,
   ) {}
 
-  async getAll(): Promise<DataRespone & { data: rooms[] }> {
+  async getAllRooms(): Promise<ResponeRooms> {
     try {
-      const dataRooms = await this.prisma.rooms.findMany({
+      const dataRooms: rooms[] = await this.prisma.rooms.findMany({
         include: {
           room_address: true,
           room_images: true,
           room_types: true,
+          places: true,
         },
       });
       return {
@@ -42,8 +45,8 @@ export class RoomsService {
     }
   }
 
-  async getRoomById(id: number): Promise<DataRespone & { data: rooms }> {
-    const dataRooms = await this.findUniqueRoomInDB(id);
+  async getRoomById(id: number): Promise<ResponeARoom> {
+    const dataRooms: rooms = await this.findUniqueRoomInDB(id);
 
     if (!dataRooms) {
       throw new NotFoundException('Room not found.');
@@ -59,7 +62,7 @@ export class RoomsService {
   async getRoomsPaginated(
     page: number,
     pageSize: number,
-  ): Promise<DataRespone & { data: rooms[] }> {
+  ): Promise<ResponeRooms> {
     if (!page && page < 1) {
       throw new BadRequestException(
         'Invalid value for page. Page must be a positive integer.',
@@ -72,7 +75,7 @@ export class RoomsService {
       );
     }
 
-    const dataRooms = await this.findRoomsPaginated(page, pageSize);
+    const dataRooms: rooms[] = await this.findRoomsPaginated(page, pageSize);
 
     return {
       statusCode: 200,
@@ -81,11 +84,9 @@ export class RoomsService {
     };
   }
 
-  async getRoomsByAddress(
-    keyword: string,
-  ): Promise<DataRespone & { data: rooms[] }> {
+  async getRoomsByAddress(keyword: string): Promise<ResponeRooms> {
     try {
-      const dataRooms = await this.prisma.rooms.findMany({
+      const dataRooms: rooms[] = await this.prisma.rooms.findMany({
         where: {
           room_address: {
             OR: [
@@ -99,6 +100,7 @@ export class RoomsService {
         include: {
           room_images: true,
           room_address: true,
+          places: true,
         },
       });
 
@@ -112,38 +114,37 @@ export class RoomsService {
     }
   }
 
-  async createRoom(
+  async postCreateRoom(
     userId: number,
     newRoomData: CreateRoomDto,
-  ): Promise<DataRespone & { data: rooms }> {
+  ): Promise<ResponeARoom> {
     try {
       const {
         title,
-        max_guests,
-        total_bedrooms,
-        total_beds,
-        total_bathrooms,
+        maxGuests,
+        totalBedrooms,
+        totalBeds,
+        totalBathrooms,
         description,
         price,
-        has_tv,
-        has_kitchen,
-        has_air_con,
-        has_wifi,
-        has_washer,
-        has_iron,
-        has_pool,
-        has_parking,
-        pets_allowed,
-        latitude,
-        longtitude,
+        hasTv,
+        hasKitchen,
+        hasAirConditioner,
+        hasWifi,
+        hasWasher,
+        hasIron,
+        hasPool,
+        hasParking,
+        petsAllowed,
         street,
         state,
         city,
         country,
-        room_type,
+        roomType,
+        placeId,
       } = newRoomData;
 
-      const address = await this.prisma.room_address.create({
+      const address: room_address = await this.prisma.room_address.create({
         data: {
           street,
           state,
@@ -152,29 +153,46 @@ export class RoomsService {
         },
       });
 
-      const dataNewRoom = await this.prisma.rooms.create({
+      const dataNewRoom: rooms = await this.prisma.rooms.create({
         data: {
           title,
-          max_guests,
-          total_bedrooms,
-          total_beds,
-          total_bathrooms,
+          max_guests: maxGuests,
+          total_bedrooms: totalBedrooms,
+          total_beds: totalBeds,
+          total_bathrooms: totalBathrooms,
           description,
           price,
-          has_tv,
-          has_kitchen,
-          has_air_con,
-          has_wifi,
-          has_washer,
-          has_iron,
-          has_pool,
-          has_parking,
-          pets_allowed,
+          has_tv: hasTv,
+          has_kitchen: hasKitchen,
+          has_air_con: hasAirConditioner,
+          has_wifi: hasWifi,
+          has_washer: hasWasher,
+          has_iron: hasIron,
+          has_pool: hasPool,
+          has_parking: hasParking,
+          pets_allowed: petsAllowed,
           create_at: new Date(),
           update_at: new Date(),
-          room_address_id: address.id,
-          room_type,
-          owner_id: userId,
+          room_address: {
+            connect: {
+              id: address.id,
+            },
+          },
+          room_types: {
+            connect: {
+              id: roomType,
+            },
+          },
+          users: {
+            connect: {
+              id: userId,
+            },
+          },
+          places:{
+            connect: {
+              id: placeId
+            }
+          }
         },
       });
       return {
@@ -191,8 +209,8 @@ export class RoomsService {
     userId: number,
     roomId: number,
     roomUpdateData: CreateRoomDto,
-  ): Promise<DataRespone & { data: rooms }> {
-    const existingRoom = await this.findUniqueRoomInDB(roomId);
+  ): Promise<ResponeARoom> {
+    const existingRoom: rooms = await this.findUniqueRoomInDB(roomId);
 
     if (!existingRoom) {
       throw new NotFoundException(`Room with id ${roomId} not found.`);
@@ -202,7 +220,7 @@ export class RoomsService {
       throw new UnauthorizedException("You can't edit someone else's room!");
     }
 
-    const roomDataUpdated = await this.updateRoomInDB(
+    const roomDataUpdated: rooms = await this.updateRoomInDB(
       existingRoom,
       roomId,
       roomUpdateData,
@@ -215,14 +233,14 @@ export class RoomsService {
     };
   }
 
-  async deleteRoom(user: users, roomId: number): Promise<DataRespone> {
-    const existingRoom = await this.findUniqueRoomInDB(roomId);
+  async deleteRoom(user: JwtPayload, roomId: number): Promise<DataRespone> {
+    const existingRoom: rooms = await this.findUniqueRoomInDB(roomId);
 
     if (!existingRoom) {
       throw new NotFoundException(`Room with id ${roomId} not found.`);
     }
 
-    if (user.role === Role.Admin || existingRoom.owner_id === user.id) {
+    if (user.role === Role.Admin || existingRoom.owner_id === user.sub) {
       await this.deleteRoomInDB(roomId);
 
       return {
@@ -240,7 +258,7 @@ export class RoomsService {
     userId: number,
     file: Express.Multer.File,
     roomId: number,
-  ): Promise<DataRespone & { data: room_images }> {
+  ): Promise<ResponeUploadRoomImg> {
     const user: users = await this.userService.findUniqueUserById(userId);
     if (!user)
       throw new UnauthorizedException(
@@ -257,7 +275,7 @@ export class RoomsService {
       urlImage,
     );
 
-    const roomImg = await this.getRoomPrimaryImg(roomId);
+    const roomImg: string = await this.getRoomPrimaryImg(roomId);
 
     if (!roomImg) {
       await this.prisma.rooms.updateMany({
@@ -289,6 +307,7 @@ export class RoomsService {
           room_images: true,
           room_address: true,
           room_types: true,
+          places: true,
         },
       });
 
@@ -298,10 +317,7 @@ export class RoomsService {
     }
   }
 
-  async findRoomsPaginated(
-    page: number,
-    pageSize: number,
-  ): Promise<rooms[]> {
+  async findRoomsPaginated(page: number, pageSize: number): Promise<rooms[]> {
     try {
       const skip = (page - 1) * pageSize;
       const take = pageSize;
@@ -340,28 +356,27 @@ export class RoomsService {
     try {
       const {
         title,
-        max_guests,
-        total_bedrooms,
-        total_beds,
-        total_bathrooms,
+        maxGuests,
+        totalBedrooms,
+        totalBeds,
+        totalBathrooms,
         description,
         price,
-        has_tv,
-        has_kitchen,
-        has_air_con,
-        has_wifi,
-        has_washer,
-        has_iron,
-        has_pool,
-        has_parking,
-        pets_allowed,
-        latitude,
-        longtitude,
+        hasTv,
+        hasKitchen,
+        hasAirConditioner,
+        hasWifi,
+        hasWasher,
+        hasIron,
+        hasPool,
+        hasParking,
+        petsAllowed,
         street,
         state,
         city,
         country,
-        room_type,
+        roomType,
+        placeId
       } = roomUpdateData;
 
       await this.prisma.room_address.update({
@@ -382,24 +397,33 @@ export class RoomsService {
         },
         data: {
           title,
-          max_guests,
-          total_bedrooms,
-          total_beds,
-          total_bathrooms,
+          max_guests: maxGuests,
+          total_bedrooms: totalBedrooms,
+          total_beds: totalBeds,
+          total_bathrooms: totalBathrooms,
           description,
           price,
-          has_tv,
-          has_kitchen,
-          has_air_con,
-          has_wifi,
-          has_washer,
-          has_iron,
-          has_pool,
-          has_parking,
-          pets_allowed,
+          has_tv: hasTv,
+          has_kitchen: hasKitchen,
+          has_air_con: hasAirConditioner,
+          has_wifi: hasWifi,
+          has_washer: hasWasher,
+          has_iron: hasIron,
+          has_pool: hasPool,
+          has_parking: hasParking,
+          pets_allowed: petsAllowed,
+          create_at: new Date(),
           update_at: new Date(),
-          primary_img: existingRoom.primary_img,
-          room_type,
+          room_types: {
+            connect: {
+              id: roomType,
+            },
+          },
+          places:{
+            connect: {
+              id: placeId
+            }
+          }
         },
       });
 
@@ -416,7 +440,11 @@ export class RoomsService {
     try {
       const room_img = await this.prisma.room_images.create({
         data: {
-          room_id: roomId,
+          rooms: {
+            connect: {
+              id: roomId,
+            },
+          },
           url_img: urlImg,
         },
       });

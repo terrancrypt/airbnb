@@ -4,6 +4,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
   HttpStatus,
+  ForbiddenException
 } from '@nestjs/common';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ReservationsService } from 'src/reservations/reservations.service';
@@ -12,6 +13,9 @@ import { PrismaSevice } from 'src/prisma/prisma.service';
 import { reservations, reviews, rooms } from '@prisma/client';
 import { DataRespone } from 'src/types';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { ResponeAReview, ResponeReviews } from './types';
+import { JwtPayload } from 'src/auth/types';
+import { Role } from 'src/users/enums/role.enum';
 
 @Injectable()
 export class ReviewsService {
@@ -24,11 +28,7 @@ export class ReviewsService {
   async createReview(
     userId: number,
     dataReview: CreateReviewDto,
-  ): Promise<
-    DataRespone & {
-      data: reviews;
-    }
-  > {
+  ): Promise<ResponeAReview> {
     const reservation: reservations =
       await this.reservationService.findUniqueReservation(
         dataReview.reservationId,
@@ -57,7 +57,7 @@ export class ReviewsService {
     };
   }
 
-  async getAllReview(): Promise<DataRespone & { data: reviews[] }> {
+  async getAllReview(): Promise<ResponeReviews> {
     try {
       const data: reviews[] = await this.prisma.reviews.findMany();
 
@@ -71,9 +71,7 @@ export class ReviewsService {
     }
   }
 
-  async getReviewsByRoom(
-    roomId: number,
-  ): Promise<DataRespone & { data: reviews[] }> {
+  async getReviewsByRoom(roomId: number): Promise<ResponeReviews> {
     const room: rooms = await this.roomsService.findUniqueRoomInDB(roomId);
     if (!room) throw new NotFoundException('Room not found.');
 
@@ -90,7 +88,7 @@ export class ReviewsService {
     userId: number,
     reviewId: number,
     updateReviewData: UpdateReviewDto,
-  ): Promise<DataRespone & { data: reviews }> {
+  ): Promise<ResponeAReview> {
     const review: reviews = await this.findUniqueReviewInDB(reviewId);
     if (!review) throw new NotFoundException('Review not found.');
 
@@ -109,18 +107,21 @@ export class ReviewsService {
     };
   }
 
-  async deleteReview(userId: number, reviewId: number): Promise<DataRespone> {
+  async deleteReview(user: JwtPayload, reviewId: number): Promise<DataRespone> {
     const review: reviews = await this.findUniqueReviewInDB(reviewId);
     if (!review) throw new NotFoundException('Review not found.');
 
-    if (review.user_create_id !== userId)
-      throw new BadRequestException(`Cannot delete other people's reviews`);
-
-    await this.deleteReviewInDB(reviewId);
-    return {
-      statusCode: HttpStatus.NO_CONTENT,
-      message: 'Delete success!',
-    };
+    if (user.role === Role.Admin || review.user_create_id === user.sub) {
+      await this.deleteReviewInDB(reviewId);
+      return {
+        statusCode: HttpStatus.NO_CONTENT,
+        message: 'Delete success!',
+      };
+    } else {
+      throw new ForbiddenException(
+        'You do not have permission to delete this room.',
+      );
+    }
   }
 
   // =========== Database Methods ================

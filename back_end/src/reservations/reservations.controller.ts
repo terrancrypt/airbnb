@@ -13,6 +13,7 @@ import {
 import { ReservationsService } from './reservations.service';
 import {
   ApiBearerAuth,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
@@ -22,15 +23,17 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { GetCurrentUserId } from 'src/common/decorators';
-import { reservations } from '@prisma/client';
+import { GetCurrentUserId, Public, Roles } from 'src/common/decorators';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { DataRespone } from 'src/types';
+import { ResponeAReser, ResponeResers } from './types';
+import { Role } from 'src/users/enums/role.enum';
+import { JwtPayload } from 'src/auth/types';
 
 @ApiTags('Reservations')
 @ApiUnauthorizedResponse({
   description:
-    'There is no access_token or the token does not exist or is no longer available.',
+    'Token expired or no token',
 })
 @ApiInternalServerErrorResponse({
   description: 'Internal Server Error!',
@@ -40,58 +43,57 @@ export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) {}
 
   @Post('create')
-  @ApiCreatedResponse({
-    description: 'Created',
-  })
-  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
-  async createReservation(
+  @ApiCreatedResponse({
+    description: 'Success!',
+  })
+  @ApiCookieAuth()
+  async postCreateReservation(
     @GetCurrentUserId() userId: number,
     @Body() dataBooking: CreateBookingDto,
-  ): Promise<
-    DataRespone & {
-      data: reservations;
-    }
-  > {
-    return await this.reservationsService.createReservation(
+  ): Promise<ResponeAReser> {
+    return await this.reservationsService.postCreateReservation(
       userId,
       dataBooking,
     );
   }
 
   @Get('get-all')
+  @Roles(Role.Admin)
   @ApiOkResponse({
     description: 'OK',
   })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @HttpCode(HttpStatus.OK)
-  async getAllRevervations(): Promise<DataRespone & { data: reservations[] }> {
+  async getAllRevervations(): Promise<ResponeResers> {
     return await this.reservationsService.getAllRevervations();
   }
 
-  @Get(':reservationId')
+  @Public()
+  @Get('/get-unique/:reservationId')
   @ApiOkResponse({
-    description: "Success!"
+    description: 'Success!',
   })
   @ApiNotFoundResponse({
     description: 'The reservation code does not exist or the code is wrong!',
   })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async getUniqueResvervation(
-    @Param('reservationId', ParseIntPipe) reservationId: number
-  ): Promise<DataRespone & {data: reservations}>{
+    @Param('reservationId', ParseIntPipe) reservationId: number,
+  ): Promise<ResponeAReser> {
     return await this.reservationsService.getUniqueResvervation(reservationId);
   }
 
+  @Public()
   @Get('get-all-by-user/:userId')
   @ApiOkResponse({
     description: 'OK',
   })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @HttpCode(HttpStatus.OK)
   async getAllByUserId(
     @Param('userId', ParseIntPipe) userId: number,
-  ): Promise<DataRespone & { data: reservations[] }> {
+  ): Promise<ResponeResers> {
     return await this.reservationsService.getAllByUserId(userId);
   }
 
@@ -102,11 +104,11 @@ export class ReservationsController {
   @ApiNotFoundResponse({
     description: 'The reservation code does not exist or the code is wrong!',
   })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async putUpdateReservation(
     @Param('reservationId', ParseIntPipe) reservationId: number,
     @Body() newBookingData: CreateBookingDto,
-  ): Promise<DataRespone & { data: reservations }> {
+  ): Promise<ResponeAReser> {
     return await this.reservationsService.putUpdateReservation(
       reservationId,
       newBookingData,
@@ -121,13 +123,17 @@ export class ReservationsController {
     description: 'The reservation code does not exist or the code is wrong!',
   })
   @ApiForbiddenResponse({
-    description: "You delete someone else's reservation, only the one you created can be deleted!"
+    description:
+      'Do not have permission, administrators or users themselves can delete their resetvations',
   })
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   async deleteReservation(
-    @GetCurrentUserId() userId: number,
+    @GetCurrentUserId() user: JwtPayload,
     @Param('reservationId', ParseIntPipe) reservationId: number,
   ): Promise<DataRespone> {
-    return await this.reservationsService.deleteReservation(userId,reservationId);
+    return await this.reservationsService.deleteReservation(
+      user,
+      reservationId,
+    );
   }
 }

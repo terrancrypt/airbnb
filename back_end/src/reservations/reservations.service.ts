@@ -140,12 +140,20 @@ export class ReservationsService {
     try {
       const dataReservation = await this.prisma.reservations.create({
         data: {
-          user_id: userId,
-          room_id: dataBooking.roomId,
           start_date: new Date(dataBooking.startDate),
           end_date: new Date(dataBooking.endDate),
           total_guests: dataBooking.totalGuests,
           price: dataBooking.price,
+          users: {
+            connect: {
+              id: userId,
+            },
+          },
+          rooms: {
+            connect: {
+              id: dataBooking.roomId,
+            },
+          },
         },
       });
 

@@ -2,8 +2,12 @@
 /dist
 /node_modules
 
-# # Eviroment
-# .env
+# Eviroment
+.env
+
+# Docker
+.dockerignore
+Dockerfile
 
 # Logs
 logs

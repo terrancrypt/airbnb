@@ -16,12 +16,15 @@ import { DataRespone } from 'src/types';
 import { JwtPayload } from 'src/auth/types';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { ResponeAUser, ResponeUsers } from './types';
+import { Response } from 'express';
+import { SessionService } from 'src/auth/session/session.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaSevice,
     private firebase: FirebaseService,
+    private sessionService: SessionService
   ) {}
 
   async postCreateUser(userData: CreateUserDto): Promise<ResponeAUser> {
@@ -117,7 +120,9 @@ export class UsersService {
       const isUser: users = await this.findUniqueUserById(userId);
       if (!isUser) throw new NotFoundException('User not found.');
 
-      const isUserEmail: users = await this.findUniqueUserByEmail(dataUpdate.email);
+      const isUserEmail: users = await this.findUniqueUserByEmail(
+        dataUpdate.email,
+      );
 
       if (isUserEmail && isUserEmail.id !== userId) {
         throw new ConflictException('Email already exist!');
@@ -132,25 +137,29 @@ export class UsersService {
       };
     } else {
       throw new ForbiddenException(
-        'You do not have permission to delete this room.',
+        'You do not have permission to update this user',
       );
     }
   }
 
-  async deleteUser(user: JwtPayload, userId: number): Promise<DataRespone> {
+  async deleteUser(
+    user: JwtPayload,
+    userId: number,
+    res: Response,
+  ): Promise<void> {
+    const isUser: users = await this.findUniqueUserById(userId);
+    if (!isUser) throw new NotFoundException('User not found.');
     if (user.role === Role.Admin || user.sub === userId) {
-      const isUser: users = await this.findUniqueUserById(userId);
-      if (!isUser) throw new NotFoundException('User not found.');
-
       await this.deleteUserInDB(userId);
 
-      return {
-        statusCode: HttpStatus.NO_CONTENT,
-        message: 'Success',
-      };
+      if (user.sub === userId) {
+        this.sessionService.deleleSession(user.sessionId);
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken')
+      }
     } else {
       throw new ForbiddenException(
-        'You do not have permission to delete this room.',
+        'You do not have permission to delete this user',
       );
     }
   }
@@ -230,7 +239,7 @@ export class UsersService {
       const hashPass: string = await bcrypt.hash(newUserData.passWord, 10);
 
       let role: Role = Role.User;
-      // Kiểm tra nếu có giá trị trong newUserData và giá trị role trong newUserData nằm trong enum Role thì sử dụng giá trị đó
+
       if (newUserData.role && Object.values(Role).includes(newUserData.role)) {
         role = newUserData.role;
       }

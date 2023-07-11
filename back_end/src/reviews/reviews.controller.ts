@@ -54,11 +54,11 @@ export class ReviewsController {
     description: 'Room not found',
   })
   @ApiCookieAuth()
-  async createReview(
+  async postCreateReview(
     @GetCurrentUserId() userId: number,
     @Body() dataReview: CreateReviewDto,
   ): Promise<ResponeAReview> {
-    return await this.reviewsService.createReview(userId, dataReview);
+    return await this.reviewsService.postCreateReview(userId, dataReview);
   }
 
   @Get('get-all')
@@ -99,12 +99,12 @@ export class ReviewsController {
   @ApiBadRequestResponse({
     description: "Cannot update other people's reviews",
   })
-  async updateReview(
+  async PutUpdateReview(
     @GetCurrentUserId() userId: number,
     @Param('reviewId', ParseIntPipe) reviewId: number,
     @Body() updateReviewData: UpdateReviewDto,
   ): Promise<ResponeAReview> {
-    return await this.reviewsService.updateReview(
+    return await this.reviewsService.PutUpdateReview(
       userId,
       reviewId,
       updateReviewData,
@@ -126,7 +126,7 @@ export class ReviewsController {
   })
   async deleteReview(
     @GetCurrentUserId() user: JwtPayload,
-    @Param('reviewId') reviewId: number,
+    @Param('reviewId', ParseIntPipe) reviewId: number,
   ): Promise<DataRespone> {
     return await this.reviewsService.deleteReview(user, reviewId);
   }

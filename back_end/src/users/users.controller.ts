@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
   UseInterceptors,
   UploadedFile,
+  Res,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
@@ -21,18 +22,24 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { GetCurrentUser, GetCurrentUserId, Public, Roles } from 'src/common/decorators';
+import {
+  GetCurrentUser,
+  GetCurrentUserId,
+  Public,
+  Roles,
+} from 'src/common/decorators';
 import { Role } from './enums/role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
-import { DataRespone } from 'src/types';
 import { JwtPayload } from 'src/auth/types';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ResponeAUser, ResponeUsers } from './types';
+import { Response } from 'express';
 
 @ApiTags('User')
 @ApiInternalServerErrorResponse({
@@ -101,7 +108,7 @@ export class UsersController {
   @Get('profile/:userId')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
-    description: "Success!"
+    description: 'Success!',
   })
   @ApiNotFoundResponse({
     description: 'User not found.',
@@ -151,8 +158,8 @@ export class UsersController {
 
   @Delete('delete/:userId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOkResponse({
-    description: 'Ok',
+  @ApiNoContentResponse({
+    description: 'Sucesss',
   })
   @ApiNotFoundResponse({
     description: 'User not found',
@@ -161,8 +168,9 @@ export class UsersController {
   async deleteUser(
     @GetCurrentUser() user: JwtPayload,
     @Param('userId', ParseIntPipe) userId: number,
-  ): Promise<DataRespone> {
-    return await this.usersService.deleteUser(user, userId);
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    return await this.usersService.deleteUser(user, userId, res);
   }
 
   @Post('upload-user-avatar')

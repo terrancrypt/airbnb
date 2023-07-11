@@ -4,7 +4,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
   HttpStatus,
-  ForbiddenException
+  ForbiddenException,
 } from '@nestjs/common';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ReservationsService } from 'src/reservations/reservations.service';
@@ -13,7 +13,7 @@ import { PrismaSevice } from 'src/prisma/prisma.service';
 import { reservations, reviews, rooms } from '@prisma/client';
 import { DataRespone } from 'src/types';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { ResponeAReview, ResponeReviews } from './types';
+import { ResponeAReview, ResponeReviews, ReviewType } from './types';
 import { JwtPayload } from 'src/auth/types';
 import { Role } from 'src/users/enums/role.enum';
 
@@ -25,7 +25,7 @@ export class ReviewsService {
     private prisma: PrismaSevice,
   ) {}
 
-  async createReview(
+  async postCreateReview(
     userId: number,
     dataReview: CreateReviewDto,
   ): Promise<ResponeAReview> {
@@ -48,7 +48,7 @@ export class ReviewsService {
     );
     if (!room) throw new NotFoundException('Room not found!');
 
-    const data: reviews = await this.createReviewInDB(userId, dataReview);
+    const data: ReviewType = await this.createReviewInDB(dataReview);
 
     return {
       statusCode: HttpStatus.CREATED,
@@ -59,7 +59,11 @@ export class ReviewsService {
 
   async getAllReview(): Promise<ResponeReviews> {
     try {
-      const data: reviews[] = await this.prisma.reviews.findMany();
+      const data: ReviewType[] = await this.prisma.reviews.findMany({
+        include:{
+          reservations: true
+        }
+      });
 
       return {
         statusCode: HttpStatus.OK,
@@ -75,7 +79,7 @@ export class ReviewsService {
     const room: rooms = await this.roomsService.findUniqueRoomInDB(roomId);
     if (!room) throw new NotFoundException('Room not found.');
 
-    const data: reviews[] = await this.findReviewsByRoomInDB(roomId);
+    const data: ReviewType[] = await this.findReviewsByRoomInDB(roomId);
 
     return {
       statusCode: HttpStatus.OK,
@@ -84,15 +88,15 @@ export class ReviewsService {
     };
   }
 
-  async updateReview(
+  async PutUpdateReview(
     userId: number,
     reviewId: number,
     updateReviewData: UpdateReviewDto,
   ): Promise<ResponeAReview> {
-    const review: reviews = await this.findUniqueReviewInDB(reviewId);
+    const review: ReviewType = await this.findUniqueReviewInDB(reviewId);
     if (!review) throw new NotFoundException('Review not found.');
 
-    if (review.user_create_id !== userId)
+    if (review.reservations.user_id !== userId)
       throw new BadRequestException(`Cannot update other people's reviews`);
 
     const data: reviews = await this.updateReviewInDB(
@@ -108,10 +112,10 @@ export class ReviewsService {
   }
 
   async deleteReview(user: JwtPayload, reviewId: number): Promise<DataRespone> {
-    const review: reviews = await this.findUniqueReviewInDB(reviewId);
+    const review: ReviewType = await this.findUniqueReviewInDB(reviewId);
     if (!review) throw new NotFoundException('Review not found.');
 
-    if (user.role === Role.Admin || review.user_create_id === user.sub) {
+    if (user.role === Role.Admin || review.reservations.user_id === user.sub) {
       await this.deleteReviewInDB(reviewId);
       return {
         statusCode: HttpStatus.NO_CONTENT,
@@ -125,18 +129,17 @@ export class ReviewsService {
   }
 
   // =========== Database Methods ================
-  async createReviewInDB(
-    userId: number,
-    dataReview: CreateReviewDto,
-  ): Promise<reviews> {
+  async createReviewInDB(dataReview: CreateReviewDto): Promise<ReviewType> {
     try {
-      const data: reviews = await this.prisma.reviews.create({
+      const data: ReviewType = await this.prisma.reviews.create({
         data: {
           reservation_id: dataReview.reservationId,
           room_id: dataReview.roomId,
           rating: dataReview.rating,
           comment: dataReview.comment,
-          user_create_id: userId,
+        },
+        include: {
+          reservations: true,
         },
       });
 
@@ -146,12 +149,15 @@ export class ReviewsService {
     }
   }
 
-  async findReviewsByRoomInDB(roomId: number): Promise<reviews[]> {
+  async findReviewsByRoomInDB(roomId: number): Promise<ReviewType[]> {
     try {
-      const data: reviews[] = await this.prisma.reviews.findMany({
+      const data: ReviewType[] = await this.prisma.reviews.findMany({
         where: {
           room_id: roomId,
         },
+        include:{
+          reservations: true
+        }
       });
 
       return data;
@@ -160,11 +166,14 @@ export class ReviewsService {
     }
   }
 
-  async findUniqueReviewInDB(reviewId: number): Promise<reviews> {
+  async findUniqueReviewInDB(reviewId: number): Promise<ReviewType> {
     try {
-      const data: reviews = await this.prisma.reviews.findUnique({
+      const data: ReviewType = await this.prisma.reviews.findUnique({
         where: {
           id: reviewId,
+        },
+        include: {
+          reservations: true,
         },
       });
 
@@ -177,9 +186,9 @@ export class ReviewsService {
   async updateReviewInDB(
     reviewId: number,
     updateReviewData: UpdateReviewDto,
-  ): Promise<reviews> {
+  ): Promise<ReviewType> {
     try {
-      const data: reviews = await this.prisma.reviews.update({
+      const data: ReviewType = await this.prisma.reviews.update({
         where: {
           id: reviewId,
         },
@@ -187,6 +196,9 @@ export class ReviewsService {
           rating: updateReviewData.rating,
           comment: updateReviewData.comment,
         },
+        include:{
+          reservations: true
+        }
       });
 
       return data;

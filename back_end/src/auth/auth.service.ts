@@ -109,7 +109,7 @@ export class AuthService {
         statusCode: HttpStatus.OK,
         message: 'Logout success!',
       };
-    } catch (err) {
+    } catch {
       throw new InternalServerErrorException();
     }
   }

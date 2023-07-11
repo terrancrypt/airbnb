@@ -12,7 +12,6 @@ import * as bcrypt from 'bcrypt';
 import { PrismaSevice } from 'src/prisma/prisma.service';
 import { Role } from './enums/role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
-import { DataRespone } from 'src/types';
 import { JwtPayload } from 'src/auth/types';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { ResponeAUser, ResponeUsers } from './types';
@@ -253,12 +252,12 @@ export class UsersService {
       const newUserInfo: users = await this.prisma.users.create({
         data: {
           full_name: newUserData.fullName,
-          email: newUserData.email,
+          email: newUserData.email.toLowerCase(),
           pass_word: hashPass,
           phone_number: newUserData.phoneNumber,
           birth_day: birthday,
-          gender: newUserData.gender,
-          role,
+          gender: newUserData.gender.toLowerCase(),
+          role: role.toLowerCase(),
         },
       });
 

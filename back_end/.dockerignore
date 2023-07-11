@@ -1,7 +1,0 @@
-.dockerignore   # Ignore the ignore
-node_modules    # Ignore local node_modules folder
-npm-debug.log   # Debug files
-Dockerfile      # The dockerfile
-.gitignore      # gitignore file
-.env-*          # Any other environment that don't want to include
-*.md            # Any 

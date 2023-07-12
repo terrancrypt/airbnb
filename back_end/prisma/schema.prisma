@@ -123,11 +123,3 @@ model places {
   place_img      String? @db.VarChar(500)
   rooms          rooms[]
 }
-
-model sessions {
-  id         Int      @id @default(autoincrement())
-  email      String   @db.VarChar(255)
-  valid      Boolean
-  start_time DateTime @db.DateTime(0)
-  end_time   DateTime @db.DateTime(0)
-}

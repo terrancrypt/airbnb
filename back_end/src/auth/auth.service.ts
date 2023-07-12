@@ -54,13 +54,13 @@ export class AuthService {
       throw new UnauthorizedException('Incorrect password!');
     }
 
-    const session = await this.sessionService.createSession(user.email);
+    const sessionId = await this.sessionService.createSession(user.email);
 
     const { access_token, refresh_token }: TokensType = await this.getTokens(
       user.id,
       user.email,
       user.role,
-      session.id,
+      sessionId,
     );
 
     res.cookie('accessToken', access_token, {
@@ -103,7 +103,7 @@ export class AuthService {
       res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
 
-      this.sessionService.deleleSession(user.sessionId);
+      await this.sessionService.deleteSession(user.sessionId);
 
       return {
         statusCode: HttpStatus.OK,
@@ -119,7 +119,7 @@ export class AuthService {
     userId: number,
     email: string,
     role: string,
-    sessionId: number,
+    sessionId: string,
   ): Promise<TokensType> {
     try {
       const payload: JwtPayload = {

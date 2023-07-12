@@ -57,19 +57,19 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return (await super.canActivate(context)) as boolean;
     }
 
-    const session = await this.sessionService.getSession(decoded.sessionId);
+    const sessionId = await this.sessionService.getSession(decoded.sessionId);
 
-    if (!session) {
+    if (!sessionId) {
       return false;
     }
 
-    await this.sessionService.upTimeSession(session.id);
+    // await this.sessionService.upTimeSession(session.id);
 
     const { access_token, refresh_token } = await this.authService.getTokens(
       decoded.sub,
       decoded.email,
       decoded.role,
-      session.id,
+      sessionId,
     );
 
     response.cookie('accessToken', access_token, {

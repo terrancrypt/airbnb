@@ -14,6 +14,7 @@ import { AuthService } from './auth/auth.service';
 import { SessionService } from './auth/session/session.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { APP_GUARD } from '@nestjs/core';
     ReservationsModule,
     PlacesModule,
     ReviewsModule,
+    RedisModule,
   ],
   providers: [
     {

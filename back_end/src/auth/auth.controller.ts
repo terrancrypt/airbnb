@@ -20,6 +20,7 @@ import {
   ApiConflictResponse,
   ApiCookieAuth,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiTags,
@@ -75,6 +76,9 @@ export class AuthController {
   @ApiCookieAuth()
   @ApiOkResponse({
     description: 'Success!',
+  })
+  @ApiForbiddenResponse({
+    description: 'Token expired or user logged out',
   })
   @HttpCode(HttpStatus.OK)
   async logOut(

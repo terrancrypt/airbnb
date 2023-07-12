@@ -152,7 +152,7 @@ export class UsersService {
       await this.deleteUserInDB(userId);
 
       if (user.sub === userId) {
-        this.sessionService.deleleSession(user.sessionId);
+        this.sessionService.deleteSession(user.sessionId);
         res.clearCookie('accessToken');
         res.clearCookie('refreshToken')
       }

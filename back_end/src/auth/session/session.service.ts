@@ -1,26 +1,33 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { sessions } from '@prisma/client';
-import { PrismaSevice } from 'src/prisma/prisma.service';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class SessionService {
-  constructor(private prisma: PrismaSevice) {}
+  constructor(
+    private redisService: RedisService,
+  ) {}
 
-  async createSession(email: string): Promise<sessions> {
+  async createSession(email: string): Promise<string> {
     try {
-      const startTime = new Date();
+      const startAt = new Date();
       const tenDaysInMilliseconds = 10 * 24 * 60 * 60 * 1000; // 10 ngày tính bằng mili giây
-      const endTime = new Date(Number(startTime) + tenDaysInMilliseconds);
+      const expiredAt = new Date(
+        Number(startAt) + tenDaysInMilliseconds,
+      ).toString();
 
-      const session = await this.prisma.sessions.create({
-        data: {
-          email,
-          valid: true,
-          start_time: startTime,
-          end_time: endTime,
-        },
+      const sessionKey =
+        Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+      await this.redisService.getClient().hSet(sessionKey, {
+        sessionId: sessionKey,
+        email,
+        expiredAt,
       });
+
+      const session = await this.redisService
+        .getClient()
+        .hGet(sessionKey, 'sessionId');
 
       return session;
     } catch {
@@ -28,50 +35,47 @@ export class SessionService {
     }
   }
 
-  async upTimeSession(sessionId: number) {
+  async upTimeSession(sessionKey: string) {
     try {
-      const startTime = new Date();
+      const currentTime = new Date();
       const tenDaysInMilliseconds = 10 * 24 * 60 * 60 * 1000; // 10 ngày tính bằng mili giây
-      const endTime = new Date(Number(startTime) + tenDaysInMilliseconds);
+      const newExpriedAt = new Date(
+        Number(currentTime) + tenDaysInMilliseconds,
+      ).toString();
 
-      await this.prisma.sessions.update({
-        where: {
-          id: sessionId,
-        },
-        data: {
-          end_time: endTime,
-        },
-      });
+      await this.redisService
+        .getClient()
+        .hSet(sessionKey, 'expriedAt', newExpriedAt);
     } catch {
       throw new InternalServerErrorException();
     }
   }
 
-  async getSession(sessionId: number): Promise<sessions | null> {
+  async getSession(sessionId: string): Promise<string | null> {
     try {
-      const session = await this.prisma.sessions.findUnique({
-        where: {
-          id: sessionId,
-        },
-      });
+      const currentTime = new Date();
+      const sessionExpiredAt = await this.redisService
+        .getClient()
+        .hGet(sessionId, 'expiredAt');
 
-      return session && session.valid ? session : null;
+      const dateExpiredAt = new Date(sessionExpiredAt);
+
+      if (currentTime < dateExpiredAt) {
+        return await this.redisService.getClient().hGet(sessionId, 'sessionId');
+      } else {
+        return null;
+      }
     } catch {
       throw new InternalServerErrorException();
     }
   }
 
-  async deleleSession(sessionId: number): Promise<boolean> {
+  async deleteSession(sessionKey: string): Promise<boolean> {
     try {
-      await this.prisma.sessions.delete({
-        where:{
-          id: sessionId
-        }
-      })
-
+      await this.redisService.getClient().del(sessionKey);
       return true;
     } catch {
-      throw new InternalServerErrorException();
+      return false;
     }
   }
 
@@ -79,33 +83,21 @@ export class SessionService {
     name: 'ScheduleCleanupSession',
   })
   async cleanupExporedSession(): Promise<void> {
-    const expiredSessions = await this.getExpiredSession();
-    if (expiredSessions) {
-      for (const session of expiredSessions) {
-        await this.prisma.sessions.delete({
-          where: {
-            id: session.id,
-          },
-        });
+    try {
+      const currentTime = new Date();
+      const { keys } = await this.redisService.getClient().scan(0);
+      for (const session of keys) {
+        const sessionExpired = await this.redisService
+          .getClient()
+          .hGet(session, 'expiredAt');
+        const dateSessionExpired = new Date(sessionExpired);
+
+        if (currentTime > dateSessionExpired) {
+          await this.redisService.getClient().del(session);
+        }
       }
+    } catch (error) {
+      console.log('Error of ScheduleCleanupSession', error);
     }
-  }
-
-  async getExpiredSession(): Promise<sessions[]> {
-    const currentTime = new Date();
-    const expiredSession = await this.prisma.sessions.findMany({
-      where: {
-        end_time: {
-          lte: currentTime,
-        },
-      },
-    });
-
-    const inValidSession = await this.prisma.sessions.findMany({
-      where: {
-        valid: false,
-      },
-    });
-    return [...expiredSession, ...inValidSession];
   }
 }

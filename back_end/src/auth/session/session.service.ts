@@ -1,7 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sessions } from '@prisma/client';
-import { session } from 'passport';
 import { PrismaSevice } from 'src/prisma/prisma.service';
 
 @Injectable()

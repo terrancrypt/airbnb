@@ -1,5 +1,9 @@
 # AirBNB APIs (NestJs Framework)
-- Deloy link: https://airbnb-server.terrancrypt.com/api
+
+## Deploy
+- Docker
+- VPS: Digital Ocean (Droplets)
+- Deploy link: https://airbnb-server.terrancrypt.com/api
 
 ## Noteworthy
 - Database (DMS): MySQL

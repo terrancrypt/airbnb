@@ -6,6 +6,7 @@
 - Deploy link: https://airbnb-server.terrancrypt.com/api
 
 ## Noteworthy
+- Database diagrams: https://drawsql.app/teams/terrancrypts-team/diagrams/airbnb
 - Database (DMS): MySQL
 - ORM: Prisma
 - Sessions storage: Redis

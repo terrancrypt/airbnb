@@ -24,7 +24,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { GetCurrentUserId, Public, Roles } from 'src/common/decorators';
+import { GetCurrentUser, GetCurrentUserId, Public, Roles } from 'src/common/decorators';
 import { DataRespone } from 'src/types';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { Role } from 'src/users/enums/role.enum';
@@ -125,7 +125,7 @@ export class ReviewsController {
       'Do not have permission, administrators or users themselves can update their reviews',
   })
   async deleteReview(
-    @GetCurrentUserId() user: JwtPayload,
+    @GetCurrentUser() user: JwtPayload,
     @Param('reviewId', ParseIntPipe) reviewId: number,
   ): Promise<DataRespone> {
     return await this.reviewsService.deleteReview(user, reviewId);

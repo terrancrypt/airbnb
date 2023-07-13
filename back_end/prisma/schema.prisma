@@ -81,7 +81,7 @@ model rooms {
   total_bedrooms  Int
   total_beds      Int
   total_bathrooms Int
-  description     String         @db.VarChar(225)
+  description     String         @db.VarChar(1000)
   price           Int
   has_tv          Boolean
   has_kitchen     Boolean

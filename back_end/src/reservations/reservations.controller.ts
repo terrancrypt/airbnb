@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { ReservationsService } from './reservations.service';
 import {
-  ApiBearerAuth,
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
@@ -23,7 +22,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { GetCurrentUserId, Public, Roles } from 'src/common/decorators';
+import { GetCurrentUser, GetCurrentUserId, Public, Roles } from 'src/common/decorators';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { DataRespone } from 'src/types';
 import { ResponeAReser, ResponeResers } from './types';
@@ -116,6 +115,7 @@ export class ReservationsController {
   }
 
   @Delete(':reservationId')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({
     description: 'Delete success',
   })
@@ -128,9 +128,9 @@ export class ReservationsController {
   })
   @ApiCookieAuth()
   async deleteReservation(
-    @GetCurrentUserId() user: JwtPayload,
+    @GetCurrentUser() user: JwtPayload,
     @Param('reservationId', ParseIntPipe) reservationId: number,
-  ): Promise<DataRespone> {
+  ): Promise<void> {
     return await this.reservationsService.deleteReservation(
       user,
       reservationId,

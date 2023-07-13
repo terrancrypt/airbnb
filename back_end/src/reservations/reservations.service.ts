@@ -110,7 +110,7 @@ export class ReservationsService {
   async deleteReservation(
     user: JwtPayload,
     reservationId: number,
-  ): Promise<DataRespone> {
+  ): Promise<void> {
     const existingResers: reservations = await this.findUniqueReservation(
       reservationId,
     );
@@ -118,13 +118,11 @@ export class ReservationsService {
     if (!existingResers)
       throw new NotFoundException('Reservation does not exist!');
 
+      console.log(user.role);
+
     if (user.role === Role.Admin || user.sub === existingResers.user_id) {
       await this.deleteResersInDB(reservationId);
 
-      return {
-        statusCode: HttpStatus.NO_CONTENT,
-        message: 'Delete success!',
-      };
     } else {
       throw new ForbiddenException(
         `You do not have permission to delete this room.`,

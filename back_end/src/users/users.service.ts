@@ -187,7 +187,7 @@ export class UsersService {
           pass_word: null,
         },
       };
-    } catch {
+    } catch (err) {
       throw new InternalServerErrorException();
     }
   }
@@ -252,12 +252,12 @@ export class UsersService {
       const newUserInfo: users = await this.prisma.users.create({
         data: {
           full_name: newUserData.fullName,
-          email: newUserData.email.toLowerCase(),
+          email: newUserData.email,
           pass_word: hashPass,
           phone_number: newUserData.phoneNumber,
           birth_day: birthday,
-          gender: newUserData.gender.toLowerCase(),
-          role: role.toLowerCase(),
+          gender: newUserData.gender,
+          role: role,
         },
       });
 
@@ -267,7 +267,8 @@ export class UsersService {
       };
 
       return data;
-    } catch {
+    } catch (err) {
+    console.log(err)
       throw new InternalServerErrorException();
     }
   }

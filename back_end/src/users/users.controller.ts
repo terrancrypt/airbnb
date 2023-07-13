@@ -17,7 +17,9 @@ import {
 import { UsersService } from './users.service';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiConflictResponse,
+  ApiConsumes,
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
@@ -40,6 +42,7 @@ import { JwtPayload } from 'src/auth/types';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ResponeAUser, ResponeUsers } from './types';
 import { Response } from 'express';
+import { UploadImageDto } from 'src/rooms/dto/upload-image.dto';
 
 @ApiTags('User')
 @ApiInternalServerErrorResponse({
@@ -132,7 +135,7 @@ export class UsersController {
     return await this.usersService.getUserByName(fullName);
   }
 
-  @Put('update/:userId')
+  @Put(':userId')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     description: 'Success!',
@@ -156,7 +159,7 @@ export class UsersController {
     return await this.usersService.putUpdateUser(user, userId, dataUpdate);
   }
 
-  @Delete('delete/:userId')
+  @Delete(':userId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({
     description: 'Sucesss',
@@ -174,6 +177,10 @@ export class UsersController {
   }
 
   @Post('upload-user-avatar')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: UploadImageDto,
+  })
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({
     description: 'Success!',

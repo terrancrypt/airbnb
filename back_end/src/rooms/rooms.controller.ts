@@ -115,7 +115,7 @@ export class RoomsController {
     return await this.roomsService.postCreateRoom(userId, newRoomData);
   }
 
-  @Put('update/:roomId')
+  @Put(':roomId')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     description: 'Update success!',
@@ -129,7 +129,7 @@ export class RoomsController {
     return await this.roomsService.updateRoom(userId, roomId, roomUpdateData);
   }
 
-  @Delete('detele')
+  @Delete(':roomId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({
     description: 'Delete successfully!',

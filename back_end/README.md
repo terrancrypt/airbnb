@@ -1,5 +1,8 @@
 # AirBNB APIs (NestJs Framework)
 
+## Updating
+- 22/7/2023: Chỉnh sửa deployment, bỏ prefix "/api"
+
 ## Deploy
 - Docker
 - VPS: Digital Ocean (Droplets)

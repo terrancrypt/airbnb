@@ -6,7 +6,7 @@
 ## Deploy
 - Docker
 - VPS: Digital Ocean (Droplets)
-- Deploy link: https://airbnb-server.terrancrypt.com/api
+- Deploy link: https://airbnb-api.terrancrypt.com
 
 ## Noteworthy
 - Database diagrams: https://drawsql.app/teams/terrancrypts-team/diagrams/airbnb

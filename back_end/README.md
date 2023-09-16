@@ -5,7 +5,7 @@
 
 ## Deploy
 - Docker
-- VPS: Digital Ocean (Droplets)
+- VPS: AWS Lightsail
 - Deploy link: https://airbnb-api.terrancrypt.com
 
 ## Noteworthy
